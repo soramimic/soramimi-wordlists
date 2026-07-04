@@ -1,0 +1,17 @@
+[project]
+name = "soramimi-wordlists-tools"
+version = "0.1.0"
+description = "単語リストの整備スクリプト(野球選手表の差分更新など)"
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.29.5",
+    "jaconv>=0.4.0",
+    "namedivider-python>=0.3.1",
+    "neologdn>=0.5.3",
+    "pandas>=2.2.3",
+    "sudachidict-full>=20241021",
+    "sudachipy>=0.6.9",
+]

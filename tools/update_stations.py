@@ -237,11 +237,12 @@ def main() -> int:
             by_qid[q]["status"] = "former"
             print(f"status: {by_qid[q]['original']} ({q}) -> former")
             changed += 1
+    # former -> current の自動復帰はしない: 未成駅・計画駅などWikidata上の
+    # 状態プロパティが不十分な駅を手動でformerにしたら、それを尊重する
     for q in by_qid:
         if q in active and by_qid[q]["status"] != "current":
-            by_qid[q]["status"] = "current"
-            print(f"status: {by_qid[q]['original']} ({q}) -> current")
-            changed += 1
+            print(f"note: {by_qid[q]['original']} ({q}) はWikidata上は現役だが "
+                  "former のまま維持(復活していたら手動でcurrentに戻すこと)")
 
     if added_qids:
         details = fetch_details(added_qids)

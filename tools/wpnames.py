@@ -157,10 +157,10 @@ def qids_to_images(qids: list) -> dict:
             for c in e.get("claims", {}).get("P18", []):
                 dv = c.get("mainsnak", {}).get("datavalue")
                 if dv:
-                    fname = dv["value"].replace(" ", "_")
+                    # カンマ等を含むファイル名はCSVを壊すので必ずURLエンコード
+                    fname = urllib.parse.quote(dv["value"].replace(" ", "_"))
                     result[q] = (
-                        "http://commons.wikimedia.org/wiki/Special:FilePath/"
-                        + urllib.parse.quote(fname),
+                        "http://commons.wikimedia.org/wiki/Special:FilePath/" + fname,
                         "https://commons.wikimedia.org/wiki/File:" + fname)
                     break
         time.sleep(0.3)
@@ -181,5 +181,11 @@ def write_csv_no_trailing_newline(path, cols, rows):
     w = _csv.DictWriter(buf, fieldnames=cols, lineterminator="\n")
     w.writeheader()
     w.writerows(rows)
-    # 末尾改行なしで書く(soramimic側のパーサが最終空行で落ちるため)
-    path.write_text(buf.getvalue().rstrip("\n"), encoding="utf-8")
+    text = buf.getvalue().rstrip("\n")
+    # soramimic側のパーサは素朴なsplit(\",\")なので、クオートが必要になる
+    # フィールド(カンマ・引用符入り)は書き込み前にエラーにする
+    if '"' in text:
+        bad = [line for line in text.splitlines() if '"' in line][:3]
+        raise ValueError(f"quoted field would break the naive parser: {bad}")
+    # 末尾改行なしで書く(パーサが最終空行で落ちるため)
+    path.write_text(text, encoding="utf-8")

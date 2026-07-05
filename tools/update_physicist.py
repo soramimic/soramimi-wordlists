@@ -34,8 +34,11 @@ SELECT ?p ?title ?img WHERE {{
 
 def image_pair(url: str):
     import urllib.parse
-    fname = urllib.parse.unquote(url.rsplit("/", 1)[1]).replace(" ", "_")
-    return (url, "https://commons.wikimedia.org/wiki/File:" + fname)
+    # カンマ等を含むファイル名はCSVを壊すので必ずURLエンコード
+    fname = urllib.parse.quote(
+        urllib.parse.unquote(url.rsplit("/", 1)[1]).replace(" ", "_"))
+    return ("http://commons.wikimedia.org/wiki/Special:FilePath/" + fname,
+            "https://commons.wikimedia.org/wiki/File:" + fname)
 
 
 def main() -> int:

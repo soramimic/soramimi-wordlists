@@ -118,9 +118,10 @@ def fetch_details(qids: list) -> dict:
             img = first_claim(e, "P18")
             d = {"muni": muni["id"] if muni else None, "image": "", "image_page": ""}
             if img:
-                fname = img.replace(" ", "_")
+                # カンマ等を含むファイル名はCSVを壊すので必ずURLエンコード
+                fname = urllib.parse.quote(img.replace(" ", "_"))
                 d["image"] = ("http://commons.wikimedia.org/wiki/Special:FilePath/"
-                              + urllib.parse.quote(fname))
+                              + fname)
                 d["image_page"] = "https://commons.wikimedia.org/wiki/File:" + fname
             details[q] = d
         time.sleep(0.3)

@@ -86,5 +86,3 @@ python3 tools/enrich_images.py     # 画像が空の人物行にCommons画像を
   ```sh
   git submodule update --remote wordlists
   ```
-
-<!-- auto-mergeテスト -->

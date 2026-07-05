@@ -225,7 +225,9 @@ def main() -> int:
     by_qid = {r["wikidata"]: r for r in rows if r.get("wikidata")}
 
     added_qids = sorted(q for q in active if q not in by_qid)
-    gone_qids = sorted(q for q in by_qid if q not in active)
+    # 既にformerの行は数えない(新たにcurrent->formerになるものだけ)
+    gone_qids = sorted(q for q in by_qid
+                       if q not in active and by_qid[q]["status"] == "current")
     if len(added_qids) + len(gone_qids) > MAX_CHANGES:
         print(f"error: too many changes (+{len(added_qids)}/-{len(gone_qids)})",
               file=sys.stderr)

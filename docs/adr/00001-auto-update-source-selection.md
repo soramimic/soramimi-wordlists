@@ -7,7 +7,7 @@
 
 ## Context
 
-単語リストのうち、ネット上の公開情報から機械的に更新できるものは GitHub Actions の週次バッチ(差分があれば PR 作成)で自動更新したい。一方で、このリポジトリのリストには提供者由来のデータ(baseball/football/stations)や人手でキュレーションしたリスト(physicist/sekitsui)が含まれており、何でも自動化するとデータの品質や性格が壊れる。どのリストを自動更新対象とし、ソースを何にするかの基準が必要になった。
+単語リストのうち、ネット上の公開情報から機械的に更新できるものは GitHub Actions の定期バッチ(差分があれば PR 作成)で自動更新したい。一方で、このリポジトリのリストには提供者由来のデータ(baseball/football/stations)や人手でキュレーションしたリスト(physicist/sekitsui)が含まれており、何でも自動化するとデータの品質や性格が壊れる。どのリストを自動更新対象とし、ソースを何にするかの基準が必要になった。
 
 ## Decision
 
@@ -29,7 +29,7 @@
 
 ## Consequences
 
-- pokemon / nations は `.github/workflows/update-wordlists.yml` の週次バッチで無人更新され、差分は PR レビューで確認できる
+- pokemon / nations は `.github/workflows/update-wordlists.yml` の年次バッチ(1月上旬)で無人更新され、差分は PR レビューで確認できる
 - baseball 等の更新は従来どおり README 記載の手順(人手確認込み)で行う
 - 新しいリストを自動更新対象に加えるときは、この 4 基準で判断し ADR を追記する
 - ソース側の仕様変更(API 廃止等)が起きた場合は、まず同等の構造化データ(元データセットの GitHub リポジトリ等)への乗り換えを検討する

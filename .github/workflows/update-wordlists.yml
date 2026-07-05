@@ -2,7 +2,7 @@ name: update-wordlists
 
 on:
   schedule:
-    - cron: "0 21 * * 0" # 毎週月曜 6:00 JST
+    - cron: "0 21 5 1 *" # 毎年1月6日 6:00 JST
   workflow_dispatch:
 
 permissions:

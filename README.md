@@ -32,8 +32,8 @@
 ## 自動更新(pokemon / nations)
 
 ネット上の公開データから自動更新できるリストは、GitHub Actions
-(`.github/workflows/update-wordlists.yml`)で毎週バッチ実行し、差分があれば
-PRが作られる(要リポジトリ設定: Settings > Actions > General >
+(`.github/workflows/update-wordlists.yml`)で年1回(1月上旬)バッチ実行し、
+差分があればPRが作られる(要リポジトリ設定: Settings > Actions > General >
 「Allow GitHub Actions to create and approve pull requests」)。
 手動実行は Actions タブの workflow_dispatch から。ローカルでは:
 

@@ -3,7 +3,7 @@
 - Status: accepted
 - Date: 2026-07-05
 - Supersedes: none
-- Superseded by: 00004-stations-auto-update.md(stations を対象外とした判断のみ)
+- Superseded by: 00004-stations-auto-update.md(stations)、00005-people-lists-auto-update.md(baseball/football/physicist)。いずれも対象外とした判断のみが置き換え
 
 ## Context
 

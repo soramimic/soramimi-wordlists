@@ -28,6 +28,18 @@ jobs:
       - name: Update stations.csv (Wikidata/Wikipedia)
         run: python tools/update_stations.py
 
+      - name: Update baseball.csv (Wikipedia rosters)
+        run: python tools/update_baseball.py
+
+      - name: Update football.csv (Wikipedia rosters)
+        run: python tools/update_football.py
+
+      - name: Update physicist.csv (Wikidata/Wikipedia)
+        run: python tools/update_physicist.py
+
+      - name: Backfill images (Wikidata P18)
+        run: python tools/enrich_images.py
+
       - name: Create pull request if changed
         uses: peter-evans/create-pull-request@v7
         with:

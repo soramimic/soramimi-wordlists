@@ -12,7 +12,7 @@ import time
 import urllib.parse
 import urllib.request
 
-UA = {"User-Agent": "soramimi-wordlists-updater/1.0 (https://github.com/soramimic/soramimi-wordlists)"}
+UA = {"User-Agent": "soramimic-wordlists-updater/1.0 (https://github.com/soramimic/soramimic-wordlists)"}
 WP_API = "https://ja.wikipedia.org/w/api.php"
 WD_API = "https://www.wikidata.org/w/api.php"
 WDQS = "https://query.wikidata.org/sparql"

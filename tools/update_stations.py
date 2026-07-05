@@ -26,7 +26,7 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-UA = {"User-Agent": "soramimi-wordlists-updater/1.0 (https://github.com/soramimic/soramimi-wordlists)"}
+UA = {"User-Agent": "soramimic-wordlists-updater/1.0 (https://github.com/soramimic/soramimic-wordlists)"}
 WDQS = "https://query.wikidata.org/sparql"
 WD_API = "https://www.wikidata.org/w/api.php"
 WP_API = "https://ja.wikipedia.org/w/api.php"

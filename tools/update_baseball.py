@@ -20,8 +20,9 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from wpnames import (DISAMBIG, KATAKANA, LINK, fetch_extracts, parse_person,
-                     template_wikitext, vnorm, write_csv_no_trailing_newline)
+from wpnames import (DISAMBIG, KATAKANA, LINK, fetch_extracts, images_for_titles,
+                     parse_person, template_wikitext, vnorm,
+                     write_csv_no_trailing_newline)
 
 TEAMS = {
     "読売ジャイアンツ": "巨人", "東京ヤクルトスワローズ": "ヤクルト",
@@ -54,7 +55,15 @@ def roster(team: str) -> list:
 
 def main() -> int:
     old_rows = list(csv.DictReader(CSV_PATH.open(encoding="utf-8")))
-    existing_full = {vnorm(r["surface"]) for r in old_rows if r["type"] == "full"}
+    for r in old_rows:
+        r.setdefault("image", "")
+        r.setdefault("image_page", "")
+    # 選手グループ: type=fullのsurface(異体字正規化) -> そのid
+    full_to_id = {vnorm(r["surface"]): r["id"] for r in old_rows if r["type"] == "full"}
+    rows_by_id = {}
+    for r in old_rows:
+        rows_by_id.setdefault(r["id"], []).append(r)
+    existing_full = set(full_to_id)
 
     all_players = {}
     for team, short in TEAMS.items():
@@ -64,6 +73,27 @@ def main() -> int:
     if not 800 <= len(all_players) <= 1500:
         print(f"error: implausible roster size: {len(all_players)}", file=sys.stderr)
         return 1
+
+    # 現役ロースター全員の画像(リンク先記事=本人なので同姓同名事故なし)
+    images = images_for_titles(sorted(all_players))
+    print(f"画像あり: {len(images)}/{len(all_players)}")
+
+    # 既存選手: 移籍していればteamに「-球団」を追記、画像が空なら付与
+    team_updates = img_updates = 0
+    for article, (display, club) in all_players.items():
+        gid = full_to_id.get(vnorm(article))
+        if gid is None:
+            continue
+        for r in rows_by_id.get(gid, []):
+            if club not in r["team"]:
+                r["team"] = f"{r['team']}-{club}"
+                team_updates += 1
+            if not r["image"] and article in images:
+                r["image"], r["image_page"] = images[article]
+                img_updates += 1
+    if team_updates:
+        print(f"移籍によるteam追記: {team_updates}行")
+    print(f"既存行への画像付与: {img_updates}行")
 
     new_players = {a: v for a, v in all_players.items()
                    if vnorm(a) not in existing_full}
@@ -104,13 +134,16 @@ def main() -> int:
                 rows.append((f"{display}({full_s})", display, g_y, "registered"))
             else:
                 flagged.append((article, f"登録名の読み不明: {display}"))
+        img, img_page = images.get(article, ("", ""))
         for original, surface, pron, typ in rows:
             added.append({"id": rid, "original": original, "team": team,
                           "surface": surface, "pronunciation": pron,
-                          "type": typ, "org_id": rid})
+                          "type": typ, "org_id": rid,
+                          "image": img, "image_page": img_page})
         print(f"added: {full_s} ({team})")
 
-    cols = ["id", "original", "team", "surface", "pronunciation", "type", "org_id"]
+    cols = ["id", "original", "team", "surface", "pronunciation", "type",
+            "org_id", "image", "image_page"]
     write_csv_no_trailing_newline(CSV_PATH, cols, old_rows + added)
 
     n_add = len({r["id"] for r in added})

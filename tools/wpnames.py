@@ -14,6 +14,7 @@ import urllib.request
 
 UA = {"User-Agent": "soramimi-wordlists-updater/1.0 (https://github.com/soramimic/soramimi-wordlists)"}
 WP_API = "https://ja.wikipedia.org/w/api.php"
+WD_API = "https://www.wikidata.org/w/api.php"
 WDQS = "https://query.wikidata.org/sparql"
 
 DISAMBIG = re.compile(r"\s+\([^)]*\)$")
@@ -115,6 +116,62 @@ def parse_person(name: str, text: str):
             return (m.group(1), m2.group(1), m.group(2), m2.group(2),
                     m.group(1) + m.group(2), m2.group(1) + m2.group(2), None)
     return None
+
+
+def titles_to_qids(titles: list) -> dict:
+    """記事タイトル -> Wikidata QID。曖昧さ回避ページは除外"""
+    result = {}
+    for i in range(0, len(titles), 50):
+        data = api({"action": "query", "prop": "pageprops",
+                    "ppprop": "wikibase_item|disambiguation", "redirects": 1,
+                    "titles": "|".join(titles[i:i + 50])})
+        redir = {r["to"]: r["from"] for r in data["query"].get("redirects", [])}
+        for p in data["query"]["pages"].values():
+            pp = p.get("pageprops", {})
+            if "disambiguation" in pp or "wikibase_item" not in pp:
+                continue
+            result[redir.get(p["title"], p["title"])] = pp["wikibase_item"]
+        time.sleep(0.3)
+    return result
+
+
+def qids_to_images(qids: list) -> dict:
+    """QID -> (image_url, image_page)。P18(画像)があるものだけ返す"""
+    result = {}
+    for i in range(0, len(qids), 50):
+        url = WD_API + "?" + urllib.parse.urlencode({
+            "action": "wbgetentities", "ids": "|".join(qids[i:i + 50]),
+            "props": "claims", "format": "json"})
+        for attempt in range(4):
+            try:
+                req = urllib.request.Request(url, headers=UA)
+                with urllib.request.urlopen(req, timeout=60) as res:
+                    entities = json.load(res).get("entities", {})
+                break
+            except Exception as ex:
+                print(f"retry {attempt}: {ex}")
+                time.sleep(5 * (attempt + 1))
+        else:
+            continue
+        for q, e in entities.items():
+            for c in e.get("claims", {}).get("P18", []):
+                dv = c.get("mainsnak", {}).get("datavalue")
+                if dv:
+                    fname = dv["value"].replace(" ", "_")
+                    result[q] = (
+                        "http://commons.wikimedia.org/wiki/Special:FilePath/"
+                        + urllib.parse.quote(fname),
+                        "https://commons.wikimedia.org/wiki/File:" + fname)
+                    break
+        time.sleep(0.3)
+    return result
+
+
+def images_for_titles(titles: list) -> dict:
+    """記事タイトル -> (image_url, image_page)"""
+    t2q = titles_to_qids(titles)
+    q2img = qids_to_images(sorted(set(t2q.values())))
+    return {t: q2img[q] for t, q in t2q.items() if q in q2img}
 
 
 def write_csv_no_trailing_newline(path, cols, rows):

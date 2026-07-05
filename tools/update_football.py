@@ -21,7 +21,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from wpnames import (DISAMBIG, KATAKANA, LINK, api, fetch_extracts,
-                     parse_person, template_wikitext, vnorm,
+                     images_for_titles, parse_person, template_wikitext, vnorm,
                      write_csv_no_trailing_newline)
 
 CSV_PATH = Path(__file__).resolve().parent.parent / "football.csv"
@@ -69,8 +69,15 @@ def club_players(club: str) -> dict:
 
 def main() -> int:
     old_rows = list(csv.DictReader(CSV_PATH.open(encoding="utf-8")))
-    existing_full = {vnorm(r["surface"].replace(" ", ""))
-                     for r in old_rows if r["type"] == "full"}
+    for r in old_rows:
+        r.setdefault("image", "")
+        r.setdefault("image_page", "")
+    full_to_id = {vnorm(r["surface"].replace(" ", "")): r["id"]
+                  for r in old_rows if r["type"] == "full"}
+    rows_by_id = {}
+    for r in old_rows:
+        rows_by_id.setdefault(r["id"], []).append(r)
+    existing_full = set(full_to_id)
 
     clubs = j_clubs()
     if not 50 <= len(clubs) <= 80:
@@ -86,6 +93,20 @@ def main() -> int:
         time.sleep(0.3)
     if missing_template:
         print("メンバーテンプレートなし:", missing_template)
+
+    # 現役ロースター全員の画像(リンク先記事=本人なので同姓同名事故なし)
+    images = images_for_titles(sorted(players))
+    print(f"画像あり: {len(images)}/{len(players)}")
+    img_updates = 0
+    for article in players:
+        gid = full_to_id.get(vnorm(article.replace(" ", "")))
+        if gid is None:
+            continue
+        for r in rows_by_id.get(gid, []):
+            if not r["image"] and article in images:
+                r["image"], r["image_page"] = images[article]
+                img_updates += 1
+    print(f"既存行への画像付与: {img_updates}行")
 
     new_players = {a: v for a, v in players.items()
                    if vnorm(a.replace(" ", "")) not in existing_full}
@@ -119,14 +140,17 @@ def main() -> int:
             original = f"{f_s} {g_s}"
             rows = [(original, f"{f_y} {g_y}", "full"),
                     (f_s, f_y, "family"), (g_s, g_y, "given")]
+        img, img_page = images.get(article, ("", ""))
         for surface, pron, typ in rows:
             added.append({"id": str(next_id), "original": original,
                           "surface": surface, "pronunciation": pron,
-                          "type": typ, "category": "player"})
+                          "type": typ, "category": "player",
+                          "image": img, "image_page": img_page})
         print(f"added: {original}")
         next_id += 1
 
-    cols = ["id", "original", "surface", "pronunciation", "type", "category"]
+    cols = ["id", "original", "surface", "pronunciation", "type", "category",
+            "image", "image_page"]
     write_csv_no_trailing_newline(CSV_PATH, cols, old_rows + added)
 
     n_add = len({r["id"] for r in added})

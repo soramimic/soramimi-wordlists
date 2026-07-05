@@ -23,23 +23,46 @@ from wpnames import (DISAMBIG, KATA2HIRA, KATAKANA, fetch_extracts,
 CSV_PATH = Path(__file__).resolve().parent.parent / "physicist.csv"
 MIN_SITELINKS = 20
 QUERY = f"""
-SELECT ?p ?title WHERE {{
+SELECT ?p ?title ?img WHERE {{
   ?p wdt:P106 wd:Q169470 ; wikibase:sitelinks ?n .
   ?a schema:about ?p ; schema:isPartOf <https://ja.wikipedia.org/> ;
      schema:name ?title .
+  OPTIONAL {{ ?p wdt:P18 ?img }}
   FILTER(?n >= {MIN_SITELINKS})
 }}"""
+
+
+def image_pair(url: str):
+    import urllib.parse
+    fname = urllib.parse.unquote(url.rsplit("/", 1)[1]).replace(" ", "_")
+    return (url, "https://commons.wikimedia.org/wiki/File:" + fname)
 
 
 def main() -> int:
     data = sparql(QUERY)
     titles = sorted({b["title"]["value"] for b in data["results"]["bindings"]})
+    images = {}  # original(空白除去済み) -> (image, image_page)
+    for b in data["results"]["bindings"]:
+        if "img" in b:
+            key = DISAMBIG.sub("", b["title"]["value"]).replace("　", "").replace(" ", "")
+            images.setdefault(key, image_pair(b["img"]["value"]))
     if not 800 <= len(titles) <= 4000:
         print(f"error: implausible physicist count: {len(titles)}", file=sys.stderr)
         return 1
 
     old_rows = list(csv.DictReader(CSV_PATH.open(encoding="utf-8")))
+    for r in old_rows:
+        r.setdefault("image", "")
+        r.setdefault("image_page", "")
     existing = {r["original"] for r in old_rows}
+
+    # 既存行への画像付与(Wikidataの物理学者集合と名前一致するものだけ=本人確定)
+    img_updates = 0
+    for r in old_rows:
+        if not r["image"] and r["original"] in images:
+            r["image"], r["image_page"] = images[r["original"]]
+            img_updates += 1
+    print(f"既存行への画像付与: {img_updates}行, 画像候補: {len(images)}人")
 
     candidates = [t for t in titles
                   if DISAMBIG.sub("", t).replace("　", "").replace(" ", "") not in existing]
@@ -66,13 +89,16 @@ def main() -> int:
         if f_s and f_s != full_s:
             rows.append((f_s, f_y, "family"))
         rows.append((full_s, full_y, "full"))
+        img, img_page = images.get(original, ("", ""))
         for surface, pron, typ in rows:
             added.append({"id": str(next_id), "original": original,
-                          "surface": surface, "pronunciation": pron, "type": typ})
+                          "surface": surface, "pronunciation": pron, "type": typ,
+                          "image": img, "image_page": img_page})
         print(f"added: {original}")
         next_id += 1
 
-    cols = ["id", "original", "surface", "pronunciation", "type"]
+    cols = ["id", "original", "surface", "pronunciation", "type",
+            "image", "image_page"]
     write_csv_no_trailing_newline(CSV_PATH, cols, old_rows + added)
 
     print(f"physicist.csv: +{len({r['id'] for r in added})}人 ({len(added)}行), "

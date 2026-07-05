@@ -14,6 +14,7 @@ usage: python3 tools/update_nations.py
 """
 
 import csv
+import io
 import json
 import sys
 import urllib.request
@@ -87,12 +88,14 @@ def main() -> int:
         print(f"added: {code} {name} (id={next_id})")
         next_id += 1
 
-    with CSV_PATH.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.writer(f, lineterminator="\n")
-        writer.writerow(["id", "original", "surface", "status"])
-        for row in rows:
-            writer.writerow([row["id"], row["original"], row["surface"],
-                             row["status"]])
+    buf = io.StringIO()
+    writer = csv.writer(buf, lineterminator="\n")
+    writer.writerow(["id", "original", "surface", "status"])
+    for row in rows:
+        writer.writerow([row["id"], row["original"], row["surface"],
+                         row["status"]])
+    # 末尾改行なしで書く(soramimic側のパーサが最終空行で落ちるため)
+    CSV_PATH.write_text(buf.getvalue().rstrip("\n"), encoding="utf-8")
 
     if added:
         with MAP_PATH.open("w", encoding="utf-8", newline="") as f:

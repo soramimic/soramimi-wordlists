@@ -141,10 +141,12 @@ def main() -> int:
             ]:
                 rows.append([gid, original, surface, p, t1, t2])
 
-    with OUT_PATH.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.writer(f, lineterminator="\n")
-        writer.writerow(["id", "original", "surface", "pronunciation", "type1", "type2"])
-        writer.writerows(rows)
+    buf = io.StringIO()
+    writer = csv.writer(buf, lineterminator="\n")
+    writer.writerow(["id", "original", "surface", "pronunciation", "type1", "type2"])
+    writer.writerows(rows)
+    # 末尾改行なしで書く(soramimic側のパーサが最終空行で落ちるため)
+    OUT_PATH.write_text(buf.getvalue().rstrip("\n"), encoding="utf-8")
 
     print(f"pokemon.csv: {len(species_ids)} species + {n_forms} forms, {len(rows)} rows")
     return 0

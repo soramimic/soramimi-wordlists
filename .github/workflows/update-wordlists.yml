@@ -25,6 +25,9 @@ jobs:
       - name: Update nations.csv (mledoze/countries)
         run: python tools/update_nations.py
 
+      - name: Update stations.csv (Wikidata/Wikipedia)
+        run: python tools/update_stations.py
+
       - name: Create pull request if changed
         uses: peter-evans/create-pull-request@v7
         with:

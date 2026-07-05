@@ -16,7 +16,7 @@
 | pronunciation | 読み(カタカナ)。無い場合はsurfaceから推定される |
 | team, type, org_id | リスト固有の付加情報(野球・サッカー等)。`type` は利用側のwhereクエリでの絞り込みに使う |
 | type1, type2 | pokemon固有: ポケモンのタイプ(でんき等)。単タイプは type2=NA |
-| status | nations/stations: `current`(現存)/`former`(旧称・廃止・脱退) |
+| status | nations/stations: `current`(現存)/`former`(廃止・脱退・旧称)。stationsは改名前の旧駅名を `renamed` で区別する |
 | prefecture, city | stations固有: 駅の所在都道府県・市区町村(同名駅の区別用。1行=1駅) |
 | image, image_page | stations固有: 駅写真のURL(Wikimedia Commons直リンク)と、ライセンス・作者の確認先ファイルページ。利用時はimage_pageのクレジット条件に従うこと |
 | wikidata | stations固有: 駅のWikidata QID(差分更新の永続キー) |

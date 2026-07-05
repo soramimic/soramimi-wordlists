@@ -40,13 +40,27 @@ jobs:
       - name: Backfill images (Wikidata P18)
         run: python tools/enrich_images.py
 
+      - name: Validate CSVs
+        run: python tools/validate_csvs.py
+
       - name: Create pull request if changed
+        id: cpr
         uses: peter-evans/create-pull-request@v7
         with:
+          # AUTOMERGE_PAT(fine-grained PAT)があればそれを使う。
+          # GITHUB_TOKENだと作られたPRでpull_requestワークフロー(ci)が
+          # 走らず、required checks待ちのauto-mergeが完了しないため
+          token: ${{ secrets.AUTOMERGE_PAT != '' && secrets.AUTOMERGE_PAT || github.token }}
           branch: auto/update-wordlists
-          title: "自動更新: pokemon / nations"
-          commit-message: "自動更新: pokemon / nations"
+          title: "自動更新: 単語リスト(年次バッチ)"
+          commit-message: "自動更新: 単語リスト(年次バッチ)"
           body: |
             定期バッチ(update-wordlists)による自動更新です。
-            差分を確認してマージしてください。
+            実行ログの「要確認」も確認してください。CIが通れば自動マージされます。
           delete-branch: true
+
+      - name: Enable auto-merge
+        if: steps.cpr.outputs.pull-request-number
+        env:
+          GH_TOKEN: ${{ secrets.AUTOMERGE_PAT != '' && secrets.AUTOMERGE_PAT || github.token }}
+        run: gh pr merge --auto --squash "${{ steps.cpr.outputs.pull-request-number }}" -R "${{ github.repository }}"

@@ -3,7 +3,7 @@
 - Status: accepted
 - Date: 2026-07-05
 - Supersedes: none
-- Superseded by: none
+- Superseded by: 00004-stations-auto-update.md(stations を対象外とした判断のみ)
 
 ## Context
 

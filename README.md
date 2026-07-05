@@ -14,6 +14,8 @@
 | surface | 変換結果として表示する表層 |
 | pronunciation | 読み(カタカナ)。無い場合はsurfaceから推定される |
 | team, type, org_id | リスト固有の付加情報(野球・サッカー等)。`type` は利用側のwhereクエリでの絞り込みに使う |
+| type1, type2 | pokemon固有: ポケモンのタイプ(でんき等)。単タイプは type2=NA |
+| status | nations固有: `current`(現存・国連加盟)/`former`(旧称・脱退・消滅) |
 
 ## リスト一覧
 
@@ -22,10 +24,32 @@
 | baseball.csv | プロ野球選手(type: family/given/full/registered) | Moto(選手表ニキ)様と協力者の皆様([やきゅうた広場](https://sns.prtls.jp/yakyuuta/home.html)) |
 | football.csv | サッカー選手 | ヨロスー様 |
 | stations.csv | 駅名 | すきやきすきや様 |
-| nations.csv | 国名 | |
+| nations.csv | 国名(国連加盟国) | [mledoze/countries](https://github.com/mledoze/countries) で自動更新 |
 | physicist.csv | 物理学者 | |
 | sekitsui.csv | 動物(脊椎動物) | |
-| pokemon.csv | ポケモン(第9世代まで) | |
+| pokemon.csv | ポケモン(地方のすがた・メガ・キョダイマックス含む) | [PokéAPI](https://github.com/PokeAPI/pokeapi) で自動更新 |
+
+## 自動更新(pokemon / nations)
+
+ネット上の公開データから自動更新できるリストは、GitHub Actions
+(`.github/workflows/update-wordlists.yml`)で毎週バッチ実行し、差分があれば
+PRが作られる(要リポジトリ設定: Settings > Actions > General >
+「Allow GitHub Actions to create and approve pull requests」)。
+手動実行は Actions タブの workflow_dispatch から。ローカルでは:
+
+```sh
+python3 tools/update_pokemon.py   # PokéAPIの公式CSVから全件再生成(id=全国図鑑No-1)
+python3 tools/update_nations.py   # 国連加盟国の増減を検出し新規のみ追記
+```
+
+- pokemon: 全件再生成。フォームは「ライチュウ（アローラのすがた）」形式で
+  表記ゆれ3行を同一idで収録。種とフォームは別ポケモンとして別id
+  (詳細は ADR 00002)
+- nations: 既存行の表記・idは変更しない。新規加盟の追記と status の更新のみ。
+  ISOコードとの対応は `tools/nations_map.csv` で管理(詳細は ADR 00003)
+- その他のリストは自動更新の対象外(選定基準と理由は ADR 00001)
+
+設計判断の記録は [docs/adr/](docs/adr/) を参照。
 
 ## 野球選手表の更新手順
 

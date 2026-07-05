@@ -1,0 +1,37 @@
+name: update-wordlists
+
+on:
+  schedule:
+    - cron: "0 21 * * 0" # 毎週月曜 6:00 JST
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Update pokemon.csv (PokéAPI)
+        run: python tools/update_pokemon.py
+
+      - name: Update nations.csv (mledoze/countries)
+        run: python tools/update_nations.py
+
+      - name: Create pull request if changed
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: auto/update-wordlists
+          title: "自動更新: pokemon / nations"
+          commit-message: "自動更新: pokemon / nations"
+          body: |
+            定期バッチ(update-wordlists)による自動更新です。
+            差分を確認してマージしてください。
+          delete-branch: true

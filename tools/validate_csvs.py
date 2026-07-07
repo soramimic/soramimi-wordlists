@@ -18,6 +18,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 REQUIRED = ("id", "original", "surface")
+# image/image_page として許可するURLプレフィックス(明示的な許可リスト。any-httpsにはしない)
+IMAGE_URL_RE = re.compile(
+    r"^https?://commons\.wikimedia\.org/"
+    r"|^https://github\.com/soramimic/soramimic-wordlists/releases/"
+)
 
 errors = []
 
@@ -56,7 +61,7 @@ def validate(path: Path):
                 err(f"{path.name}:{lineno}: {col} が空")
         for col in img_cols:
             v = f[idx[col]]
-            if v and not re.match(r"^https?://commons\.wikimedia\.org/", v):
+            if v and not IMAGE_URL_RE.match(v):
                 err(f"{path.name}:{lineno}: {col} が不正なURL: {v[:60]}")
     print(f"OK: {path.name} ({len(lines) - 1}行)")
 

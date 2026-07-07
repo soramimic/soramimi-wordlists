@@ -28,7 +28,8 @@ id,original,surface,status
 26,フランス,フランス,current
 27,ガボン,ガボン,current
 28,ガンビア,ガンビア,current
-29,グルジア,グルジア,current
+29,グルジア,グルジア,former
+29,ジョージア,ジョージア,current
 30,ドイツ,ドイツ,current
 31,ガーナ,ガーナ,current
 32,ギリシャ,ギリシャ,current
@@ -78,9 +79,11 @@ id,original,surface,status
 76,南スーダン,南スーダン,current
 77,スペイン,スペイン,current
 78,スリランカ,スリランカ,current
+78,セイロン,セイロン,former
 79,スーダン,スーダン,current
 80,スリナム,スリナム,current
-81,スワジランド,スワジランド,current
+81,スワジランド,スワジランド,former
+81,エスワティニ,エスワティニ,current
 82,スウェーデン,スウェーデン,current
 83,スイス,スイス,current
 84,シリア,シリア,current
@@ -118,6 +121,7 @@ id,original,surface,status
 116,チェコ,チェコ,current
 117,朝鮮民主主義人民共和国,朝鮮民主主義人民共和国,current
 118,コンゴ,コンゴ,current
+118,ザイール,ザイール,former
 119,デンマーク,デンマーク,current
 120,ジブチ,ジブチ,current
 121,ドミニカ,ドミニカ,current
@@ -148,6 +152,7 @@ id,original,surface,status
 146,モロッコ,モロッコ,current
 147,モザンビーク,モザンビーク,current
 148,ミャンマー,ミャンマー,current
+148,ビルマ,ビルマ,former
 149,ナミビア,ナミビア,current
 150,ナウル,ナウル,current
 151,ネパール,ネパール,current
@@ -164,7 +169,8 @@ id,original,surface,status
 162,パラグアイ,パラグアイ,current
 163,ペルー,ペルー,current
 164,フィリピン,フィリピン,current
-165,マケドニア,マケドニア,current
+165,マケドニア,マケドニア,former
+165,北マケドニア,北マケドニア,current
 166,東ティモール,東ティモール,current
 167,トーゴ,トーゴ,current
 168,チュニジア,チュニジア,current
@@ -192,3 +198,9 @@ id,original,surface,status
 190,アメリカ,アメリカ,current
 191,ベネズエラ,ベネズエラ,current
 192,ジンバブエ,ジンバブエ,current
+193,ソ連,ソ連,former
+193,ソビエト連邦,ソビエト連邦,former
+194,ユーゴスラビア,ユーゴスラビア,former
+195,チェコスロバキア,チェコスロバキア,former
+196,東ドイツ,東ドイツ,former
+197,西ドイツ,西ドイツ,former

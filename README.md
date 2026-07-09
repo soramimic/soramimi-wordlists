@@ -38,6 +38,13 @@
 | pokemon.csv | ポケモン(地方のすがた・メガ・キョダイマックス含む) | [PokéAPI](https://github.com/PokeAPI/pokeapi) で自動更新 |
 | fictional_scientist.csv | AI生成による架空の科学者1000人(名前・読み・生没年・国籍・分野・主な業績・肖像カード画像) | jiroshimaya/fictional-scientists プロジェクトによる自動生成(実在人物とは無関係)、画像は本リポジトリのReleaseで配布 |
 
+## 利用上の注意
+
+- 本リポジトリは非公式のファンメイド・データ集であり、各作品・団体・人物とは無関係です
+- 空耳変換の研究・個人利用を想定しています。各リストの元データの帰属・ライセンスは上表の出典欄を参照してください(Wikidata由来はCC0、Wikipedia由来はCC BY-SA 4.0、nationsは[mledoze/countries](https://github.com/mledoze/countries)(ODbL)由来)
+- 実在人物名のリスト(baseball/football/physicist)は公表済みの事実情報(名簿)のみで構成しています。氏名の営利的な顧客誘引を目的とする利用(パブリシティ権に触れうる利用)は行わないでください
+- 掲載内容について権利者からの申し出があれば速やかに対応します(Issueにてご連絡ください)
+
 ## 自動更新(pokemon / nations)
 
 ネット上の公開データから自動更新できるリストは、GitHub Actions

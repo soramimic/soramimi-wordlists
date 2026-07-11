@@ -40,6 +40,9 @@ jobs:
       - name: Update sekitsui.csv (Wikidata taxa)
         run: python tools/update_sekitsui.py
 
+      - name: Update plant.csv (Wikidata taxa)
+        run: python tools/update_plant.py
+
       - name: Backfill images (Wikidata P18)
         run: python tools/enrich_images.py
 

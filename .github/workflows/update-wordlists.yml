@@ -34,8 +34,8 @@ jobs:
       - name: Update football.csv (Wikipedia rosters)
         run: python tools/update_football.py
 
-      - name: Update physicist.csv (Wikidata/Wikipedia)
-        run: python tools/update_physicist.py
+      - name: Update scientist.csv (Wikidata/Wikipedia)
+        run: python tools/update_scientist.py
 
       - name: Update sekitsui.csv (Wikidata taxa)
         run: python tools/update_sekitsui.py

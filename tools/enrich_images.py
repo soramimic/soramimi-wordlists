@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """画像が空の人物行に、権利的に安全な画像(Wikimedia Commons)を遡及付与する。
 
-対象: baseball / football / physicist。氏名からWikipedia記事を引き、
+対象: baseball / football / scientist。氏名からWikipedia記事を引き、
 - 曖昧さ回避ページでない
-- 記事冒頭に分野キーワード(野球/サッカー/物理)がある(同姓同名の別人ガード)
+- 記事冒頭に分野キーワード(野球/サッカー/科学分野)がある(同姓同名の別人ガード)
 を満たす場合のみ、Wikidata P18 の画像URLを image/image_page に書き込む。
 既存の画像・他の列は一切変更しない。冪等(空欄のみ埋める)。
 
 見つからない場合は「氏名 (野球)」等の曖昧さ回避付きタイトルでも試す。
 
-usage: python3 tools/enrich_images.py [baseball|football|physicist ...]
+usage: python3 tools/enrich_images.py [baseball|football|scientist ...]
 """
 
 import csv
@@ -36,10 +36,12 @@ CONFIGS = {
         "cols": ["id", "original", "surface", "pronunciation", "type",
                  "category", "image", "image_page"],
     },
-    "physicist": {
-        "csv": "physicist.csv", "keyword": r"物理|天文|化学|数学",
+    "scientist": {
+        "csv": "scientist.csv",
+        "keyword": r"物理|天文|化学|数学|生物|生化学|計算機|情報|地質|地球|科学者|学者",
         "suffixes": [],
-        "cols": ["id", "original", "surface", "pronunciation", "type",
+        "cols": ["id", "original", "surface", "pronunciation", "type", "field",
+                 "era", "birth_year", "nobel", "gender", "country", "status",
                  "image", "image_page"],
     },
 }
@@ -144,6 +146,6 @@ def enrich(name: str) -> None:
 
 
 if __name__ == "__main__":
-    targets = sys.argv[1:] or ["baseball", "football", "physicist"]
+    targets = sys.argv[1:] or ["baseball", "football", "scientist"]
     for t in targets:
         enrich(t)

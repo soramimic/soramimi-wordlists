@@ -22,9 +22,9 @@ sitelinks>=20 ≒ 多言語版20版以上に記事がある著名層)と、Wikip
 - description: 主な業績の短い説明(記事冒頭1〜2文≒80字、なければWikidataのja
   description、どちらも無ければNA。ASCIIカンマ・二重引用符は除去)
 
-環境変数 SCIENTIST_CACHE を指定すると、Wikidata/Wikipedia の取得結果(persons
-/attrs/extracts)をそのパスに pickle キャッシュし、2回目以降は再取得せず読み込む
-(開発用。CI では未設定=常に再取得)。
+環境変数 SCIENTIST_CACHE を指定すると、Wikidata/Wikipedia の取得結果(属性
+attrs と記事冒頭 extracts)をそのパスに pickle キャッシュし、2回目以降は再取得
+せず読み込む(開発用。CI では未設定=常に再取得)。
 
 usage: python3 tools/update_scientist.py
 """

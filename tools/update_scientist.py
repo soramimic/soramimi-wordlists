@@ -20,8 +20,9 @@ sitelinks>=20 ≒ 多言語版20版以上に記事がある著名層)と、Wikip
 - gender:  男性/女性/その他/NA
 - country: 市民権のある国の日本語ラベル(複数は"/"、不明はNA)
 - status:  物故/存命/NA
-- description: 主な業績の短い説明(記事冒頭1〜2文≒80字、なければWikidataのja
-  description、どちらも無ければNA。ASCIIカンマ・二重引用符は除去)
+- description: 主な業績の短い完結文(記事冒頭の先頭生没年カッコを除去し、「。」
+  区切りで完結文を目安90字まで連結。なければWikidataのja description、どちらも
+  無ければNA。ASCIIカンマ・二重引用符は除去、常に「。」で終わる)
 
 環境変数 SCIENTIST_CACHE を指定すると、Wikidata/Wikipedia の取得結果(属性
 attrs と記事冒頭 extracts)をそのパスに pickle キャッシュし、2回目以降は再取得
@@ -48,7 +49,8 @@ NEW_CSV = Path(__file__).resolve().parent.parent / "scientist.csv"
 MIN_SITELINKS = 20
 CURRENT_YEAR = datetime.date.today().year
 CACHE = os.environ.get("SCIENTIST_CACHE")  # 開発用: 取得結果の pickle キャッシュ先
-DESC_MAX = 80  # description の最大文字数(1〜2文)
+DESC_TARGET = 90  # description の目安文字数(完結文をここまで連結)
+DESC_HARD = 120   # 1文がこれを超える場合のみ「、」境界で切る
 
 # 対象職業(P106)→ 日本語フィールドラベル。並び順が field の安定した出力順。
 OCCUPATIONS = [
@@ -99,27 +101,87 @@ def _clean_ws(s: str) -> str:
 
 
 def _sanitize_desc(s: str) -> str:
-    """CSVパーサを壊す文字を除去(ASCIIカンマ→読点、二重引用符→削除)。"""
-    s = _clean_ws(s).replace('"', "").replace(",", "、")
-    return s[:DESC_MAX].strip()
+    """CSVパーサを壊す文字を除去(ASCIIカンマ・二重引用符を削除)。日本語の
+    「、」「。」「（）」「：」は残す。連続空白は1つに。"""
+    s = s.replace('"', "").replace(",", " ")
+    return re.sub(r"[\s　]+", " ", s).strip()
+
+
+def _strip_lead_paren(text: str) -> str:
+    """記事名直後の生没年・原語表記カッコ（…）/(…) を1つ除去する。
+    典型は「名前（…）は、…」。閉じカッコ直後に「は」が来る位置をアンカーにして
+    除去する(元記事のカッコ対応が壊れていても暴走しないため)。"""
+    opens, closes = "（(", "）)"
+    idx = next((i for i, c in enumerate(text) if c in opens), None)
+    if idx is None:
+        return text
+    ha, period = text.find("は"), text.find("。")
+    limit = min([x for x in (ha, period) if x != -1], default=len(text))
+    if idx > limit:  # カッコが「は」「。」より後 = 本文中のカッコなので触らない
+        return text
+    # 1) 「）は」を優先アンカーにする(name（…）は、… の閉じカッコ)
+    m = re.search(r"[）)]\s*は", text)
+    if m and m.start() >= idx:
+        return (text[:idx].rstrip() + text[m.start() + 1:].lstrip()).strip()
+    # 2) フォールバック: 対応の取れたブロック。ただし最初の「。」を越えたら暴走と
+    #    みなして除去しない(壊れたカッコ対策)
+    end = period if period != -1 else len(text)
+    depth, j = 0, idx
+    while j < len(text):
+        if text[j] in opens:
+            depth += 1
+        elif text[j] in closes:
+            depth -= 1
+            if depth == 0:
+                return (text[:idx].rstrip() + text[j + 1:].lstrip()).strip()
+        if j >= end and depth > 0:
+            return text
+        j += 1
+    return text
+
+
+def _cut_at_comma(s: str, target: int = DESC_TARGET, hard: int = DESC_HARD) -> str:
+    """長すぎる1文を「、」境界で切って「。」を付す(中途半端な断片回避)。"""
+    pos = s[:hard].rfind("、")
+    return (s[:pos] if pos >= 30 else s[:target]).rstrip("、 ") + "。"
+
+
+def _assemble(text: str) -> str:
+    """完結した文(「。」区切り)だけを目安 DESC_TARGET 字まで連結する。常に
+    「。」で終わる。1文目が長すぎる場合のみ「、」境界で切る。"""
+    text = text.strip("、 ").strip()
+    if not text:
+        return ""
+    ends_complete = text.endswith("。")
+    segs = [s.strip() for s in text.split("。")]
+    complete = [s for s in (segs if ends_complete else segs[:-1]) if s]
+    if complete:
+        out = ""
+        for s in complete:
+            cand = out + s + "。"
+            if out and len(cand) > DESC_TARGET:
+                break
+            out = cand
+            if len(out) >= DESC_TARGET:
+                break
+        return out if len(out) <= DESC_HARD else _cut_at_comma(complete[0])
+    # 完結文が無い(冒頭抽出が1文目の途中で切れている)場合は「、」で整形
+    frag = (segs[0] if segs else text).strip()
+    return _cut_at_comma(frag) if frag else ""
 
 
 def make_description(intro: str, wd_desc: str) -> str:
-    """記事冒頭の1〜2文(≒DESC_MAX字)を description にする。無ければ Wikidata
-    の ja description、どちらも無ければ NA。"""
-    text = _clean_ws(intro)
-    summary = ""
-    if text:
-        for seg in re.split(r"(?<=。)", text):
-            if summary and len(summary) + len(seg) > DESC_MAX:
-                break
-            summary += seg
-            if len(summary) >= DESC_MAX * 0.6:
-                break
-        summary = summary or text
-    if not summary:
-        summary = wd_desc or ""
-    return _sanitize_desc(summary) or "NA"
+    """動画キャプションに使える完結文を作る。Wikipedia 冒頭文を優先し、先頭の
+    生没年カッコを除去してから「。」区切りで完結文を連結。無ければ Wikidata の
+    ja description(完結句)にフォールバック、どちらも無ければ NA。"""
+    text = _strip_lead_paren(_clean_ws(intro))
+    desc = _sanitize_desc(_assemble(text)).strip()
+    if desc and not desc.endswith("。"):
+        desc += "。"
+    if not desc:
+        wd = _sanitize_desc(_clean_ws(wd_desc)).strip()
+        desc = (wd + "。") if wd and not wd.endswith("。") else wd
+    return desc or "NA"
 
 
 def parse_birth(iso: str):

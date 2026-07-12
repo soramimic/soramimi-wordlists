@@ -3,7 +3,7 @@
 - Status: accepted
 - Date: 2026-07-06
 - Supersedes: none
-- Superseded by: none
+- Superseded by: [00010](00010-fictional-portrait-only-images.md) (Decision 2 のみ。画像は肖像のみのv2タグ配布に変更)
 
 ## Context
 

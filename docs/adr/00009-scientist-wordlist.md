@@ -27,9 +27,9 @@ physicist.csv を **scientist.csv にリネーム(置換)** し、`tools/update_
 | Q82594 | 計算機科学 |
 | Q520549 | 地学 |
 
-**列**: `id, original, surface, pronunciation, type, field1, field2, field3, field4, era, birth_year, nobel, gender, country, status, description, image, image_page`。旧 physicist.csv の `id/original/surface/pronunciation/type/image/image_page` はそのまま引き継ぐ。
+**列**: `id, original, surface, pronunciation, type, field, era, birth_year, nobel, gender, country, status, description, image, image_page`。旧 physicist.csv の `id/original/surface/pronunciation/type/image/image_page` はそのまま引き継ぐ。
 
-- **field1 / field2 / field3 / field4**(分野・固定4スロット): 該当する職業の日本語ラベルを上表の優先順(物理→化学→数学→天文学→生物学→計算機科学→地学)で詰め、余りは `NA`。5分野以上該当する稀な人は優先順で上位4つに切り詰める(切り詰め人数はログに出す)。**単一のスラッシュ区切り列(例 `物理/数学`)にしなかった理由**: ソラミミック本体のフィルタ(facet)は値の「完全一致」で評価し、`物理/数学` は `物理` のチェックに一致せずフィルタから漏れる(スラッシュ分割ロジックは未実装)。既存の複数値カラムは pokemon の `type1/type2` という固定スロット方式で扱っており(facet.columns で OR 展開)、それに倣う。**スロット数を4にした根拠**: 対象集合の分野該当数分布は 1分野2,423人・2分野827人・3分野175人・4分野15人・5分野2人・6分野以上0人で、最大が5分野(ロモノーソフ・キルヒャー)。4スロットあれば切り詰めは2人だけに収まり、列数の肥大も避けられる。app 側は `facet.columns:[field1,field2,field3,field4]` で「分野」facet を組めば複数分野に対応できる(※app 側 conf/setting.json の変更は別リポジトリなので本 PR の範囲外)。既存 physicist.csv 行で Wikidata と照合できなかった人は、出自が物理学者なので `field1=物理, field2=field3=field4=NA`(Wikidata 一致があればそれを優先)。
+- **field**(分野・単一列のスラッシュ区切り多値): 該当する職業の日本語ラベルを上表の優先順(物理→化学→数学→天文学→生物学→計算機科学→地学)で並べ、"/" で連結する(例 `物理/数学`)。切り詰めはしない(ロモノーソフのように5分野該当なら5つとも入る)。無ければ `NA`。CSV はカンマ禁止(利用側パーサが素朴な split(","))なので区切りは必ず "/"。**多値を1列で持てる理由**: ソラミミック本体に部分一致演算子 `~=` を追加した(別リポジトリ soramimic 側の対応)ので、`field~=物理` と書けば `物理/数学` のような多値セルにも一致し、分野で絞り込める。列を増やさずに複数分野を表現できる。app 側 setting.json での facet 定義・`~=` 実装は soramimic 側で対応する(本 PR の範囲外)。既存 physicist.csv 行で Wikidata と照合できなかった人は、出自が物理学者なので `field=物理`(Wikidata 一致があればそれを優先)。
 - **description**(業績の短い説明): 動画生成等で使う短いテキスト。Wikipedia 日本語版記事の冒頭(fetch_extracts)の先頭1〜2文を約80字に切り詰めたもの。無ければ Wikidata の ja description(schema:description、CC0)にフォールバック、どちらも無ければ `NA`。**サニタイズ**: ASCII カンマは読点「、」に置換、二重引用符は除去、改行・タブは空白に潰して1行にする(全角の「、」「。」は許容)。利用側パーサ(素朴な split(","))を壊さないため必須。
 - **era**(時代区分): 生年から古代(≤500)/中世(501–1500)/近世(1501–1700)/近代(1701–1900)/現代(1901–)。生年不明は `NA`。境界は生年 basis の明快な丸め値で、変更容易にするため `tools/update_scientist.py` の `era_of` に集約する。生年 basis のため、アインシュタイン(生1879)は業績が20世紀でも `近代` になる。これは既知の割り切り。
 - **birth_year**: P569 の西暦年のみ。紀元前は `前287` 形式(Wikidata の格納値に従う)。不明は `NA`。
@@ -54,5 +54,5 @@ physicist.csv を **scientist.csv にリネーム(置換)** し、`tools/update_
 - **破壊的変更**: physicist.csv を廃止し scientist.csv に置き換える。submodule で physicist.csv を参照している利用側は scientist.csv への追随が必要。ファイル名変更を周知する。
 - **P106 依存の限界**: 職業タグに物理/化学等が付いた政治家・万能人(例: 学者かつ政治家)も混入しうる。sitelinks>=20 の著名層に限っており、題材リストとしては許容する。職業タグが無い科学者は取りこぼす(網羅性は Wikidata の P106 付与に依存)。
 - **era は生年 basis の割り切り**: 業績の時代とはずれうる(アインシュタイン=近代)。境界値は `era_of` で一元管理し、見直しは容易。
-- 列追加により既存の全行にも新列が付く。Wikidata と照合できなかった既存行は field1=物理・他は NA になる(実行ログに件数を出す)。既存の original/surface/pronunciation/type/id は書き換えない。
-- **field を固定4スロットにした割り切り**: 5分野以上の稀な人は上位4分野に切り詰めるため5番目の分野は落ちる。実データでは該当は2人(ロモノーソフ・キルヒャー、いずれも最下位の「地学」が落ちる)のみ。分野数の増加が必要になれば列を増やすか、ソラミミック側の facet 実装がスラッシュ分割に対応した時点でスラッシュ1列へ戻す選択肢もある。
+- 列追加により既存の全行にも新列が付く。Wikidata と照合できなかった既存行は field=物理・他は NA になる(実行ログに件数を出す)。既存の original/surface/pronunciation/type/id は書き換えない。
+- **field は単一列のスラッシュ区切り多値**: ソラミミックの部分一致演算子 `~=` に依存する。`~=` を実装していない利用側では `field` を完全一致で評価すると `物理/数学` が `物理` に一致しない点に注意(その場合は利用側でスラッシュ分割するか、`~=` 相当の部分一致で評価する)。分野数に上限はなく、実データの最大は5分野(ロモノーソフ・キルヒャー)。

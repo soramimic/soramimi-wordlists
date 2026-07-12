@@ -22,7 +22,7 @@
 | status | nations/stations: `current`(現存)/`former`(廃止・脱退・旧称)。stationsは改名前の旧駅名を `renamed` で区別する |
 | prefecture, city | stations固有: 駅の所在都道府県・市区町村(同名駅の区別用。1行=1駅) |
 | image, image_page | 写真のURL(Wikimedia Commons直リンクまたは本リポジトリのGitHub Releaseアセット)と、ライセンス・作者の確認先ページ(stations/baseball/football/scientist/fictional_scientist/fictional_anime_character)。利用時はimage_pageのクレジット条件に従うこと |
-| field1, field2, field3, field4 | scientist固有: 分野を優先順(物理→化学→数学→天文学→生物学→計算機科学→地学)で詰めた固定4スロット。pokemonのtype1/type2に倣い、余りは`NA`(5分野以上該当は上位4つに切り詰め)。ソラミミック側のfacet「完全一致」に合わせ複数値を1列に詰めず分割している。app側で`facet.columns:[field1,field2,field3,field4]`とOR展開すれば「分野」facetを組める(app側 conf/setting.json の変更は別リポジトリなので本リポジトリの範囲外) |
+| field | scientist固有: 分野を優先順(物理→化学→数学→天文学→生物学→計算機科学→地学)で並べた単一列のスラッシュ区切り多値(例 `物理/数学`)。切り詰めなし、無ければ`NA`。ソラミミックに部分一致演算子`~=`を追加したので、多値を1列で持ち`field~=物理`で絞り込める(app側 setting.json の対応は別リポジトリ soramimic 側で実施) |
 | era, birth_year, nobel, gender, country, status, description | scientist固有: 時代区分(古代/中世/近世/近代/現代/NA。生年basis)・西暦生年(紀元前は「前287」、不明はNA)・科学系ノーベル賞受賞者か(yes/no、照合不能はNA)・性別(男性/女性/その他/NA)・市民権のある国(情報列。複数は"/"、不明はNA)・生死(物故/存命/NA)・主な業績の短い説明(記事冒頭1〜2文≒80字、ASCIIカンマ・引用符除去、無ければNA) |
 | wikidata | stations固有: 駅のWikidata QID(差分更新の永続キー) |
 | birth_year, death_year, nationality, field, achievement | fictional_scientist固有: 生年・没年・国籍・分野・主な業績(AI生成の架空人物情報) |
@@ -82,7 +82,7 @@ python3 tools/enrich_images.py     # 画像が空の人物行にCommons画像を
   「姓 名(せい めい、」から取得(詳細は ADR 00005)
 - scientist: 旧 physicist.csv を広義の科学者リストに拡張・リネーム。Wikidataの
   職業(P106)が物理/化学/数学/天文/生物/計算機科学/地学のいずれかで sitelinks>=20 の
-  人物を対象に、分野(field1〜field4)・時代(era)・生年・ノーベル賞・性別・国・
+  人物を対象に、分野(field。スラッシュ区切り多値)・時代(era)・生年・ノーベル賞・性別・国・
   生死・業績説明(description)を付与。既存の手選び行は保持し、未収録者を追記。読みは
   記事冒頭から取得(詳細は ADR 00009)
 - sekitsui: Wikidataの脊椎動物(rank=種・日本語ラベルがカタカナ)を綱ごとに

@@ -11,8 +11,9 @@ sitelinks>=20 ≒ 多言語版20版以上に記事がある著名層)と、Wikip
 - 既存行の読み・id・表記は絶対に書き換えない
 
 新列(詳細は docs/adr/00009):
-- field1..field4: 分野(物理/化学/数学/天文学/生物学/計算機科学/地学)を優先順で
-  詰めた固定4スロット。余りはNA、5分野以上該当は上位4つに切り詰め(pokemonのtype1/2方式)
+- field:   分野(物理/化学/数学/天文学/生物学/計算機科学/地学)を優先順で並べた
+  単一列のスラッシュ区切り多値(例 物理/数学)。切り詰めなし、無ければNA。
+  ソラミミック側の部分一致演算子 field~=物理 で1列のまま絞れる前提
 - era:     時代区分(古代/中世/近世/近代/現代/NA)。生年basis
 - birth_year: 西暦生年(紀元前は「前287」形式、不明はNA)
 - nobel:   科学系ノーベル賞受賞者か(yes/no、既存で照合不能はNA)
@@ -135,16 +136,12 @@ def parse_birth(iso: str):
         return None, None
 
 
-FIELD_SLOTS = 4  # field1..field4 の固定スロット数
-
-
-def field_slots(labels):
-    """分野ラベル集合 -> (field1..field4, truncated)。優先順で詰め、枠に満たない
-    分は NA、5つ以上該当は上位4つに切り詰める(pokemonのtype1/2に倣う固定スロット)。"""
+def field_value(labels) -> str:
+    """分野ラベル集合 -> 単一 field 値(優先順のスラッシュ区切り多値)。該当が
+    無ければ "物理"(呼び出し側で出自デフォルトに使う)。切り詰めはしない。
+    ソラミミック側の部分一致演算子 field~=物理 で1列のまま絞り込める前提。"""
     ordered = sorted(set(labels), key=lambda x: FIELD_ORDER[x])
-    truncated = len(ordered) > FIELD_SLOTS
-    slots = (ordered[:FIELD_SLOTS] + ["NA"] * FIELD_SLOTS)[:FIELD_SLOTS]
-    return tuple(slots), truncated
+    return "/".join(ordered) if ordered else "物理"
 
 
 def fetch_person_set() -> dict:
@@ -241,11 +238,11 @@ def build_attr(bnd: dict) -> dict:
 
 
 COLS = ["id", "original", "surface", "pronunciation", "type",
-        "field1", "field2", "field3", "field4", "era", "birth_year", "nobel",
-        "gender", "country", "status", "description", "image", "image_page"]
+        "field", "era", "birth_year", "nobel", "gender", "country", "status",
+        "description", "image", "image_page"]
 # 既存行に付与/保持する新列
-NEW_FIELDS = ["field1", "field2", "field3", "field4", "era", "birth_year",
-              "nobel", "gender", "country", "status", "description"]
+NEW_FIELDS = ["field", "era", "birth_year", "nobel", "gender", "country",
+              "status", "description"]
 
 
 def fetch_all(persons: dict):
@@ -273,17 +270,13 @@ def main() -> int:
         return 1
     attrs, extracts = fetch_all(persons)
 
-    truncated_people = set()  # field が4分野以上で切り詰められた人(照合キー)
-
-    # 照合キー(正規化タイトル)-> {qid, slots(f1,f2,f3), attr, desc}
+    # 照合キー(正規化タイトル)-> {qid, field, attr, desc}
     by_key = {}
     for qid, p in persons.items():
         key = norm(p["title"])
-        slots, truncated = field_slots(p["fields"])
-        if truncated:
-            truncated_people.add(key)
         by_key[key] = {
-            "qid": qid, "slots": slots, "attr": attrs.get(qid, {}),
+            "qid": qid, "field": field_value(p["fields"]),
+            "attr": attrs.get(qid, {}),
             "desc": make_description(extracts.get(p["title"], ""),
                                      attrs.get(qid, {}).get("wd_desc", "")),
         }
@@ -303,7 +296,7 @@ def main() -> int:
         info = by_key.get(r["original"])
         if info:
             matched += 1
-            r["field1"], r["field2"], r["field3"], r["field4"] = info["slots"]
+            r["field"] = info["field"]
             a = info["attr"]
             r["era"] = a.get("era", "NA")
             r["birth_year"] = a.get("birth_year", "NA")
@@ -314,14 +307,13 @@ def main() -> int:
             r["description"] = info["desc"]
             if not r["image"] and a.get("image"):
                 r["image"], r["image_page"] = a["image"]
-        elif r.get("field1"):
+        elif r.get("field"):
             # scientist.csv 再実行時: Wikidata非一致行は既存の付加情報を保持する
             for c in NEW_FIELDS:
                 r.setdefault(c, "NA")
         else:
-            # physicist.csv からの初回移行: 出自が物理学者なので field1=物理、他はNA
-            r["field1"] = "物理"
-            r["field2"] = r["field3"] = r["field4"] = "NA"
+            # physicist.csv からの初回移行: 出自が物理学者なので field=物理、他はNA
+            r["field"] = "物理"
             r["era"] = r["birth_year"] = r["nobel"] = "NA"
             r["gender"] = r["country"] = r["status"] = r["description"] = "NA"
     print(f"既存 {len(old_rows)}行, Wikidata一致 {matched}行", flush=True)
@@ -349,9 +341,8 @@ def main() -> int:
             full_s = original
         info = by_key.get(norm(title), {})
         a = info.get("attr", {})
-        f1, f2, f3, f4 = info.get("slots", ("物理", "NA", "NA", "NA"))
         base = {
-            "field1": f1, "field2": f2, "field3": f3, "field4": f4,
+            "field": info.get("field", "物理"),
             "era": a.get("era", "NA"),
             "birth_year": a.get("birth_year", "NA"),
             "nobel": a.get("nobel", "no"),
@@ -375,13 +366,11 @@ def main() -> int:
     write_csv_no_trailing_newline(NEW_CSV, COLS, old_rows + added)
 
     n_people = len({r["id"] for r in added})
-    # 出力に含まれる人物のうち field 切り詰め対象だった数(既存一致+新規)
-    used_keys = {norm(r["original"]) for r in old_rows}.union(
-        {norm(r["original"]) for r in added})
-    n_trunc = len(truncated_people & used_keys)
+    max_fields = max((len(r["field"].split("/")) for r in old_rows + added
+                      if r["field"] not in ("NA", "")), default=0)
     print(f"\nscientist.csv: 既存{len(old_rows)}行 + 新規{n_people}人({len(added)}行) "
           f"= {len(old_rows) + len(added)}行", flush=True)
-    print(f"field 5分野以上で切り詰めた人(上位4分野を保持): {n_trunc}", flush=True)
+    print(f"単一field列(スラッシュ区切り)・切り詰めなし。最大分野数: {max_fields}", flush=True)
     print(f"要確認(読み機械決定不能) {len(flagged)}件", flush=True)
     for t in flagged[:50]:
         print(f"  要確認: {t}", flush=True)

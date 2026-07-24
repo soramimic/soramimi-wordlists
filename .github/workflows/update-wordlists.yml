@@ -43,6 +43,12 @@ jobs:
       - name: Update plant.csv (Wikidata taxa)
         run: python tools/update_plant.py
 
+      - name: Update youtuber.csv (Wikidata/Wikipedia)
+        run: python tools/update_youtuber.py
+
+      - name: Update vtuber.csv (Wikidata/Wikipedia)
+        run: python tools/update_vtuber.py
+
       - name: Backfill images (Wikidata P18)
         run: python tools/enrich_images.py
 

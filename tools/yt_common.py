@@ -1,0 +1,215 @@
+"""youtuber.csv / vtuber.csv 自動更新の共通処理(詳細は docs/adr/00011)。
+
+出典: Wikidata(職業P106がYouTuber/バーチャルYouTuberで、ja.wikipediaに記事が
+ある人物)と、Wikipedia日本語版記事の冒頭文(CC BY-SA 4.0)。
+
+- 収録は記事名(=活動名)のみ。本名などの個人情報は取得しない
+- 姓名分割できる名前(兎田ぺこら等)は family/given/full、ハンドル型
+  (HIKAKIN/キズナアイ等)は full のみ
+- 読みはカタカナ。かな名は自身から変換、漢字・ラテン文字名は記事冒頭
+  「名前（よみ、」から抽出。機械決定できない名前はスキップして「要確認」に報告
+- 既存行の表記・読み・idは書き換えない。自動で行うのは未収録者の追記と
+  status の current→former 一方向更新(P2032: 活動終了)のみ
+"""
+
+import csv
+import os
+import pickle
+import re
+from pathlib import Path
+
+from wpnames import (DISAMBIG, HIRA2KATA, fetch_extracts, parse_person, sparql,
+                     write_csv_no_trailing_newline)
+
+COLS = ["id", "original", "surface", "pronunciation", "type",
+        "org", "debut_year", "status"]
+
+# かな・カタカナだけのハンドル名(読みが自明)。wpnames.KATAKANA のひらがな込み版
+KANA_ONLY = re.compile(r"^[ぁ-ゖァ-ヶー・=＝\s]+$")
+# 冒頭カッコ内の読みとして許容する文字
+YOMI = r"[ぁ-ゖァ-ヶー・]+"
+
+
+def assert_occupation(qid: str, must: tuple, must_not: tuple):
+    """QIDのja/enラベルに期待キーワードが含まれることを確認するフェイルセーフ。
+    QIDの取り違え(別概念の取り込み)をクエリ実行前に検出する。"""
+    q = f"""
+SELECT ?l WHERE {{ wd:{qid} rdfs:label ?l . FILTER(LANG(?l) IN ("ja", "en")) }}"""
+    labels = [b["l"]["value"] for b in sparql(q)["results"]["bindings"]]
+    low = [l.lower() for l in labels]
+    if not any(any(k.lower() in l for l in low) for k in must) or \
+            any(any(k.lower() in l for l in low) for k in must_not):
+        raise SystemExit(
+            f"error: wd:{qid} のラベル {labels} が期待(must={must}, "
+            f"must_not={must_not})と合わない。QIDを確認してください")
+
+
+def fetch_persons(occ: str, exclude: str = None) -> dict:
+    """QID -> ja記事タイトル(職業P106=occ かつ ja.wikipediaに記事がある人物)。"""
+    minus = f"MINUS {{ ?p wdt:P106 wd:{exclude} }}" if exclude else ""
+    q = f"""
+SELECT ?p ?title WHERE {{
+  ?p wdt:P106 wd:{occ} .
+  {minus}
+  ?a schema:about ?p ; schema:isPartOf <https://ja.wikipedia.org/> ;
+     schema:name ?title .
+}}"""
+    persons = {}
+    for b in sparql(q)["results"]["bindings"]:
+        qid = b["p"]["value"].rsplit("/", 1)[1]
+        persons[qid] = b["title"]["value"]
+    print(f"対象(wd:{occ}): {len(persons)}人(distinct QID)", flush=True)
+    return persons
+
+
+def _year(iso: str):
+    try:
+        return str(int(iso.split("-")[0]))
+    except (ValueError, AttributeError, IndexError):
+        return None
+
+
+def fetch_attrs(qids: list) -> dict:
+    """QID -> {org, debut_year, status}。P108/P463/P1416(所属)と
+    P2031/P2032(活動期間)をバッチ取得。"""
+    attrs = {}
+    for i in range(0, len(qids), 200):
+        batch = qids[i:i + 200]
+        values = " ".join(f"wd:{q}" for q in batch)
+        q = f"""
+SELECT ?p (GROUP_CONCAT(DISTINCT ?orgL; SEPARATOR="||") AS ?orgs)
+  (MIN(?start) AS ?s) (MAX(?end) AS ?e) WHERE {{
+  VALUES ?p {{ {values} }}
+  OPTIONAL {{ ?p wdt:P108|wdt:P463|wdt:P1416 ?org .
+             ?org rdfs:label ?orgL . FILTER(LANG(?orgL)="ja") }}
+  OPTIONAL {{ ?p wdt:P2031 ?start . FILTER(isLiteral(?start)) }}
+  OPTIONAL {{ ?p wdt:P2032 ?end . FILTER(isLiteral(?end)) }}
+}} GROUP BY ?p"""
+        for b in sparql(q)["results"]["bindings"]:
+            qid = b["p"]["value"].rsplit("/", 1)[1]
+            orgs = set()
+            for o in b.get("orgs", {}).get("value", "").split("||"):
+                # ラベル内のカンマ・引用符はCSVパーサを壊すので除去
+                o = o.replace(",", " ").replace('"', "").strip()
+                if o:
+                    orgs.add(o)
+            attrs[qid] = {
+                # 出力順をソート固定(WDQSのGROUP_CONCAT順は非決定的)
+                "org": "/".join(sorted(orgs)) if orgs else "NA",
+                "debut_year": _year(b.get("s", {}).get("value")) or "NA",
+                "status": "former" if b.get("e", {}).get("value") else "current",
+            }
+        print(f"  属性取得 {min(i + 200, len(qids))}/{len(qids)}", flush=True)
+    return attrs
+
+
+def parse_entry(title: str, text: str):
+    """記事名と冒頭文から (original, [(surface, pronunciation, type), ...]) を
+    返す。読みが機械決定できなければ None(要確認)。"""
+    name = DISAMBIG.sub("", title)
+    text = (text or "").replace("　", " ")
+    parsed = parse_person(name, text)
+    if parsed:
+        f_s, f_y, g_s, g_y, full_s, full_y, _reg = parsed
+        original = full_s.replace(" ", "")
+        rows = []
+        if f_s and f_s != original:
+            rows.append((f_s, f_y, "family"))
+            rows.append((g_s, g_y, "given"))
+        rows.append((original, full_y.replace(" ", ""), "full"))
+        return original, rows
+    plain = name.replace("　", "").replace(" ", "")
+    if KANA_ONLY.match(plain):  # かなハンドル名は自身が読み
+        yomi = plain.replace("＝", "・").translate(HIRA2KATA)
+        return plain, [(plain, yomi, "full")]
+    # 漢字・ラテン文字等のハンドル名: 冒頭「名前（よみ、」「名前（よみ）」から抽出
+    lead = text.replace(" ", "")
+    m = re.match(re.escape(plain) + r"[（(](" + YOMI + r")[、，,）)]", lead)
+    if m:
+        yomi = m.group(1).translate(HIRA2KATA)
+        return plain, [(plain, yomi, "full")]
+    return None
+
+
+def norm(title: str) -> str:
+    """既存 original との照合キー(曖昧回避サフィックス除去+空白除去)。"""
+    return DISAMBIG.sub("", title).replace("　", "").replace(" ", "")
+
+
+def build_list(csv_name: str, occ: str, must: tuple, must_not: tuple,
+               exclude: str, guard: tuple, cache_env: str) -> int:
+    """リストを生成(初回)または追記・status更新(2回目以降)する。"""
+    csv_path = Path(__file__).resolve().parent.parent / csv_name
+    assert_occupation(occ, must, must_not)
+    if exclude:
+        assert_occupation(exclude, ("youtuber", "ユーチューバー"), ())
+
+    cache = os.environ.get(cache_env)  # 開発用: 取得結果の pickle キャッシュ先
+    if cache and Path(cache).exists():
+        with open(cache, "rb") as fh:
+            persons, attrs, extracts = pickle.load(fh)
+        print(f"キャッシュから読み込み: {cache}", flush=True)
+    else:
+        persons = fetch_persons(occ, exclude)
+        lo, hi = guard
+        if not lo <= len(persons) <= hi:
+            print(f"error: implausible count for {csv_name}: {len(persons)}")
+            return 1
+        attrs = fetch_attrs(sorted(persons))
+        titles = sorted(set(persons.values()))
+        print(f"記事冒頭を取得中... {len(titles)}件", flush=True)
+        extracts = fetch_extracts(titles)
+        if cache:
+            with open(cache, "wb") as fh:
+                pickle.dump((persons, attrs, extracts), fh)
+            print(f"キャッシュ保存: {cache}", flush=True)
+
+    if csv_path.exists():
+        old_rows = list(csv.DictReader(csv_path.open(encoding="utf-8")))
+    else:
+        old_rows = []
+    existing = {r["original"] for r in old_rows}
+    next_id = max((int(r["id"]) for r in old_rows), default=-1) + 1
+
+    # 既存行の status 一方向更新(current -> former のみ。手動修正は上書きしない)
+    wd_status = {norm(t): attrs.get(q, {}).get("status")
+                 for q, t in persons.items()}
+    turned = set()
+    for r in old_rows:
+        if r.get("status") == "current" and wd_status.get(r["original"]) == "former":
+            r["status"] = "former"
+            turned.add(r["original"])
+    if turned:
+        print(f"status更新(current→former): {len(turned)}人", flush=True)
+
+    added, flagged = [], []
+    for qid, title in sorted(persons.items(), key=lambda kv: kv[1]):
+        parsed = parse_entry(title, extracts.get(title, ""))
+        if parsed is None:
+            flagged.append(title)
+            continue
+        original, rows = parsed
+        if "," in original or '"' in original:  # CSVパーサを壊す名前は収録しない
+            flagged.append(title)
+            continue
+        if original in existing:
+            continue
+        existing.add(original)
+        a = attrs.get(qid, {})
+        for surface, pron, typ in rows:
+            added.append({"id": str(next_id), "original": original,
+                          "surface": surface, "pronunciation": pron,
+                          "type": typ, "org": a.get("org", "NA"),
+                          "debut_year": a.get("debut_year", "NA"),
+                          "status": a.get("status", "current")})
+        next_id += 1
+
+    write_csv_no_trailing_newline(csv_path, COLS, old_rows + added)
+
+    n_people = len({r["id"] for r in added})
+    print(f"\n{csv_name}: 既存{len(old_rows)}行 + 新規{n_people}人({len(added)}行) "
+          f"= {len(old_rows) + len(added)}行", flush=True)
+    print(f"要確認(読み機械決定不能) {len(flagged)}件", flush=True)
+    for t in flagged[:50]:
+        print(f"  要確認: {t}", flush=True)
+    return 0

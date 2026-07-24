@@ -19,7 +19,8 @@
 | class | sekitsui/plant: 大分類。sekitsuiは魚類/両生類/爬虫類/鳥類/哺乳類、plantは双子葉/単子葉/裸子植物/シダ植物/コケ植物/藻類。分類不明はNA |
 | extinct | sekitsui/plant: 絶滅種か(yes/no)。IUCN絶滅・野生絶滅、または化石タクソンをyesとする |
 | type1, type2 | pokemon固有: ポケモンのタイプ(でんき等)。単タイプは type2=NA |
-| status | nations/stations: `current`(現存)/`former`(廃止・脱退・旧称)。stationsは改名前の旧駅名を `renamed` で区別する |
+| status | nations/stations: `current`(現存)/`former`(廃止・脱退・旧称)。stationsは改名前の旧駅名を `renamed` で区別する。youtuber/vtuberは `current`(活動中)/`former`(卒業・引退・活動終了) |
+| org, debut_year | youtuber/vtuber固有: 所属事務所・グループ(スラッシュ区切り多値、`org~=ホロライブ` で絞り込む前提。無ければNA)と活動開始年(西暦、無ければNA) |
 | prefecture, city | stations固有: 駅の所在都道府県・市区町村(同名駅の区別用。1行=1駅) |
 | image, image_page | 写真のURL(Wikimedia Commons直リンクまたは本リポジトリのGitHub Releaseアセット)と、ライセンス・作者の確認先ページ(stations/baseball/football/scientist/fictional_scientist/fictional_anime_character)。利用時はimage_pageのクレジット条件に従うこと |
 | field | scientist固有: 分野を優先順(物理→化学→数学→天文学→生物学→計算機科学→地学)で並べた単一列のスラッシュ区切り多値(例 `物理/数学`)。切り詰めなし、無ければ`NA`。ソラミミックに部分一致演算子`~=`を追加したので、多値を1列で持ち`field~=物理`で絞り込める(app側 setting.json の対応は別リポジトリ soramimic 側で実施) |
@@ -40,6 +41,8 @@
 | sekitsui.csv | 動物(脊椎動物) | [Wikidata](https://www.wikidata.org/) (CC0) で自動更新 |
 | plant.csv | 植物(被子/裸子/シダ/コケ/藻類の和名) | [Wikidata](https://www.wikidata.org/) (CC0) で自動更新 |
 | pokemon.csv | ポケモン(地方のすがた・メガ・キョダイマックス含む) | [PokéAPI](https://github.com/PokeAPI/pokeapi) で自動更新 |
+| youtuber.csv | YouTuber(ja.wikipediaに記事がある著名層。活動名のみ、type: family/given/full) | Wikidata/Wikipedia (CC BY-SA 4.0) で自動更新 |
+| vtuber.csv | VTuber(ja.wikipediaに記事がある著名層。海外勢含む。所属・活動開始年・status付き) | Wikidata/Wikipedia (CC BY-SA 4.0) で自動更新 |
 | fictional_scientist.csv | AI生成による架空の科学者1000人(名前・読み・生没年・国籍・分野・主な業績・肖像画像。type: family/given/full) | jiroshimaya/fictional-scientists プロジェクトによる自動生成(実在人物とは無関係)、画像は本リポジトリのReleaseで配布 |
 | fictional_anime_character.csv | AI生成による架空アニメ『蒼穹の螺旋航路』の登場キャラ1000人(名前・読み・所属・初登場年・種族・声優名・紹介文・肖像画像。type: family/given/full/call/nick。callは作中で使われる呼び名(敬称込み)、nickはあだ名) | jiroshimaya/fictional-scientists プロジェクトによる自動生成(実在の作品・人物とは無関係)、画像は本リポジトリのReleaseで配布 |
 | fictional_daily_anime_character.csv | AI生成による架空日常アニメ『まちまる！』の住人1025人(名前・読み・所属・初登場年・種族・声優名・紹介文・肖像画像。type: family/given/full/call/nick。callは作中で使われる呼び名(敬称込み)、nickはあだ名) | jiroshimaya/fictional-scientists プロジェクトによる自動生成(実在の作品・人物とは無関係)、画像は本リポジトリのReleaseで配布 |
@@ -48,7 +51,8 @@
 
 - 本リポジトリは非公式のファンメイド・データ集であり、各作品・団体・人物とは無関係です
 - 空耳変換の研究・個人利用を想定しています。各リストの元データの帰属・ライセンスは上表の出典欄を参照してください(Wikidata由来はCC0、Wikipedia由来はCC BY-SA 4.0、nationsは[mledoze/countries](https://github.com/mledoze/countries)(ODbL)由来)
-- 実在人物名のリスト(baseball/football/scientist)は公表済みの事実情報(名簿)のみで構成しています。氏名の営利的な顧客誘引を目的とする利用(パブリシティ権に触れうる利用)は行わないでください
+- 実在人物名のリスト(baseball/football/scientist/youtuber)は公表済みの事実情報(名簿)のみで構成しています。氏名の営利的な顧客誘引を目的とする利用(パブリシティ権に触れうる利用)は行わないでください。youtuberは記事名(活動名)のみを収録し、本名は収録しません
+- vtuberは各社(カバー・ANYCOLOR等)の知的財産であるキャラクター名のリストです。名称と読みのみを非商用のファンメイド用途で収録しています(画像・キャラクターデザインは含みません)
 - 掲載内容について権利者からの申し出があれば速やかに対応します(Issueにてご連絡ください)
 
 ## 自動更新(pokemon / nations)
@@ -68,6 +72,8 @@ python3 tools/update_football.py   # J1〜J3ロースターから未収録選手
 python3 tools/update_scientist.py  # Wikidataの著名科学者(7分野・sitelinks>=20)で生成
 python3 tools/update_sekitsui.py   # Wikidataの脊椎動物(rank=種・カタカナ和名)を追記
 python3 tools/update_plant.py      # Wikidataの植物(rank=種・カタカナ和名)を追記
+python3 tools/update_youtuber.py   # WikidataのYouTuber(ja記事あり)を追記
+python3 tools/update_vtuber.py     # WikidataのVTuber(ja記事あり)を追記
 python3 tools/enrich_images.py     # 画像が空の人物行にCommons画像を遡及付与
 ```
 
@@ -94,6 +100,11 @@ python3 tools/enrich_images.py     # 画像が空の人物行にCommons画像を
   するため目(order)ごとに分割し、単子葉/双子葉に振り分ける。非被子植物は門
   ごとに取得。`class` 列に大分類(双子葉/単子葉/裸子植物/シダ植物/コケ植物/
   藻類)、`extinct` 列に絶滅種か(yes/no)を付与(詳細は ADR 00008)
+- youtuber/vtuber: Wikidataの職業(P106)がYouTuber/バーチャルYouTuberで
+  ja.wikipediaに記事がある人物のみ。記事名(活動名)のみ収録し本名は取得しない。
+  読みは記事冒頭「名前（よみ、」から抽出(かな名は自身から変換)。既存行は
+  書き換えず、未収録者の追記と status(current→former)の一方向更新のみ。
+  org(所属)・debut_year(活動開始年)付き(詳細は ADR 00011)
 - 自動更新の対象外は fictional_scientist(外部プロジェクトで生成したCSVを
   取り込む方式。詳細は ADR 00006)
 

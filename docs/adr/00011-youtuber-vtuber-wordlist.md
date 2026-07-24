@@ -3,7 +3,7 @@
 - Status: accepted
 - Date: 2026-07-24
 - Supersedes: none
-- Superseded by: none
+- Superseded by: [00012](00012-merge-youtuber-vtuber.md) (2ファイル構成をやめ、youtuber.csv に統合して category 列で区別)
 
 ## Context
 

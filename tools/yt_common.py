@@ -1,8 +1,9 @@
-"""youtuber.csv / vtuber.csv 自動更新の共通処理(詳細は docs/adr/00011)。
+"""youtuber.csv 自動更新の共通処理(詳細は docs/adr/00011, 00012)。
 
 出典: Wikidata(職業P106がYouTuber/バーチャルYouTuberで、ja.wikipediaに記事が
 ある人物)と、Wikipedia日本語版記事の冒頭文(CC BY-SA 4.0)。
 
+- YouTuberとVTuberを1ファイルに収録し、category列(youtuber/vtuber)で区別する
 - 収録は記事名(=活動名)のみ。本名などの個人情報は取得しない
 - 姓名分割できる名前(兎田ぺこら等)は family/given/full、ハンドル型
   (HIKAKIN/キズナアイ等)は full のみ
@@ -22,7 +23,7 @@ from wpnames import (DISAMBIG, HIRA2KATA, fetch_extracts, parse_person, sparql,
                      write_csv_no_trailing_newline)
 
 COLS = ["id", "original", "surface", "pronunciation", "type",
-        "org", "debut_year", "status"]
+        "category", "org", "debut_year", "status"]
 
 # かな・カタカナだけのハンドル名(読みが自明)。wpnames.KATAKANA のひらがな込み版
 KANA_ONLY = re.compile(r"^[ぁ-ゖァ-ヶー・=＝\s]+$")
@@ -136,32 +137,42 @@ def norm(title: str) -> str:
     return DISAMBIG.sub("", title).replace("　", "").replace(" ", "")
 
 
-def build_list(csv_name: str, occ: str, must: tuple, must_not: tuple,
-               exclude: str, guard: tuple, cache_env: str) -> int:
-    """リストを生成(初回)または追記・status更新(2回目以降)する。"""
+def build_list(csv_name: str, specs: list, cache_env: str) -> int:
+    """リストを生成(初回)または追記・status更新(2回目以降)する。
+
+    specs: category ごとの取得仕様
+      {category, occ, must, must_not, exclude, guard} の dict のリスト。
+    """
     csv_path = Path(__file__).resolve().parent.parent / csv_name
-    assert_occupation(occ, must, must_not)
-    if exclude:
-        assert_occupation(exclude, ("youtuber", "ユーチューバー"), ())
+    for s in specs:
+        assert_occupation(s["occ"], s["must"], s["must_not"])
+        if s.get("exclude"):
+            assert_occupation(s["exclude"], ("youtuber", "ユーチューバー"), ())
 
     cache = os.environ.get(cache_env)  # 開発用: 取得結果の pickle キャッシュ先
     if cache and Path(cache).exists():
         with open(cache, "rb") as fh:
-            persons, attrs, extracts = pickle.load(fh)
+            persons_by_cat, attrs, extracts = pickle.load(fh)
         print(f"キャッシュから読み込み: {cache}", flush=True)
     else:
-        persons = fetch_persons(occ, exclude)
-        lo, hi = guard
-        if not lo <= len(persons) <= hi:
-            print(f"error: implausible count for {csv_name}: {len(persons)}")
-            return 1
-        attrs = fetch_attrs(sorted(persons))
-        titles = sorted(set(persons.values()))
+        persons_by_cat = {}
+        for s in specs:
+            persons = fetch_persons(s["occ"], s.get("exclude"))
+            lo, hi = s["guard"]
+            if not lo <= len(persons) <= hi:
+                print(f"error: implausible count for {s['category']}: "
+                      f"{len(persons)}")
+                return 1
+            persons_by_cat[s["category"]] = persons
+        qids = sorted(set().union(*persons_by_cat.values()))
+        attrs = fetch_attrs(qids)
+        titles = sorted({t for p in persons_by_cat.values()
+                         for t in p.values()})
         print(f"記事冒頭を取得中... {len(titles)}件", flush=True)
         extracts = fetch_extracts(titles)
         if cache:
             with open(cache, "wb") as fh:
-                pickle.dump((persons, attrs, extracts), fh)
+                pickle.dump((persons_by_cat, attrs, extracts), fh)
             print(f"キャッシュ保存: {cache}", flush=True)
 
     if csv_path.exists():
@@ -173,6 +184,7 @@ def build_list(csv_name: str, occ: str, must: tuple, must_not: tuple,
 
     # 既存行の status 一方向更新(current -> former のみ。手動修正は上書きしない)
     wd_status = {norm(t): attrs.get(q, {}).get("status")
+                 for persons in persons_by_cat.values()
                  for q, t in persons.items()}
     turned = set()
     for r in old_rows:
@@ -183,7 +195,10 @@ def build_list(csv_name: str, occ: str, must: tuple, must_not: tuple,
         print(f"status更新(current→former): {len(turned)}人", flush=True)
 
     added, flagged = [], []
-    for qid, title in sorted(persons.items(), key=lambda kv: kv[1]):
+    entries = [(title, cat, qid)
+               for cat, persons in persons_by_cat.items()
+               for qid, title in persons.items()]
+    for title, cat, qid in sorted(entries):
         parsed = parse_entry(title, extracts.get(title, ""))
         if parsed is None:
             flagged.append(title)
@@ -199,7 +214,8 @@ def build_list(csv_name: str, occ: str, must: tuple, must_not: tuple,
         for surface, pron, typ in rows:
             added.append({"id": str(next_id), "original": original,
                           "surface": surface, "pronunciation": pron,
-                          "type": typ, "org": a.get("org", "NA"),
+                          "type": typ, "category": cat,
+                          "org": a.get("org", "NA"),
                           "debut_year": a.get("debut_year", "NA"),
                           "status": a.get("status", "current")})
         next_id += 1

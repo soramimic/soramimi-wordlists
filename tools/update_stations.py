@@ -12,6 +12,8 @@
 - csv にあって現役でなくなった駅は status=former に変更(行は消さない)
 - 新規駅の読みは Wikipedia 冒頭文「〇〇駅(よみえき)」を正規表現で抽出。
   取れない場合は pronunciation 空で追記(PRレビューで補完する)
+- 新規駅の路線名(lines列)は tools/enrich_lines.py と同じ方式で取得。
+  既存行の lines はここでは触らない(補完・更新は enrich_lines.py で行う)
 
 usage: python3 tools/update_stations.py
 """
@@ -248,6 +250,9 @@ def main() -> int:
                   "former のまま維持(復活していたら手動でcurrentに戻すこと)")
 
     if added_qids:
+        # 循環import回避のため遅延import(enrich_lines側が本モジュールを使う)
+        from enrich_lines import SEP, fetch_station_lines
+        line_map = fetch_station_lines()
         details = fetch_details(added_qids)
         munis = {d["muni"] for d in details.values() if d["muni"]}
         admin = resolve_admin(munis)
@@ -260,7 +265,9 @@ def main() -> int:
             muni_label, pref = admin.get(d["muni"], ("", "")) if d["muni"] else ("", "")
             rows.append({"id": str(next_id), "original": name, "surface": name,
                          "pronunciation": yomi or "", "prefecture": pref,
-                         "city": muni_label, "status": "current",
+                         "city": muni_label,
+                         "lines": SEP.join(sorted(line_map.get(q, []))),
+                         "status": "current",
                          "image": d["image"], "image_page": d["image_page"],
                          "wikidata": q})
             mark = "" if yomi else " [要読み確認]"
@@ -268,7 +275,7 @@ def main() -> int:
             next_id += 1
 
     cols = ["id", "original", "surface", "pronunciation", "prefecture", "city",
-            "status", "image", "image_page", "wikidata"]
+            "lines", "status", "image", "image_page", "wikidata"]
     buf = io.StringIO()
     w = csv.DictWriter(buf, fieldnames=cols, lineterminator="\n")
     w.writeheader()

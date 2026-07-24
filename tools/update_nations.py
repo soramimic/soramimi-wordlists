@@ -64,12 +64,15 @@ def main() -> int:
         return 1
 
     changed = 0
-    # 脱退・消滅した国は former に、(再)加盟国は current に揃える
-    member_ids = {mapping[code]["id"] for code in mapping if code in un}
-    former_ids = {mapping[code]["id"] for code in removed}
+    # 脱退・消滅した国は former に、(再)加盟国は current に揃える。
+    # 対象はマップの original と一致する行だけ(同idで手動追加した別名・
+    # 旧称の行まで巻き込んで status を書き換えないため)
+    member_keys = {(m["id"], m["original"]) for c, m in mapping.items() if c in un}
+    former_keys = {(mapping[c]["id"], mapping[c]["original"]) for c in removed}
     for row in rows:
-        want = "current" if row["id"] in member_ids else (
-            "former" if row["id"] in former_ids else row["status"]
+        key = (row["id"], row["original"])
+        want = "current" if key in member_keys else (
+            "former" if key in former_keys else row["status"]
         )
         if row["status"] != want:
             print(f"status: {row['surface']} (id={row['id']}) -> {want}")

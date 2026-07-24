@@ -12,6 +12,8 @@ local_language_id=1 が ja-Hrkt(かな表記)。
 - メガシンカ: フォーム名がそれ自体で完結した名前(メガリザードンX等)なので1行
 
 type1/type2 はポケモンのタイプ(でんき等)。単タイプは type2=NA。
+generation は登場世代(1〜9)。種は全国図鑑上の登場世代、フォームは
+そのフォームが導入されたバージョングループの世代(メガシンカ=6等)。
 idはポケモン単位(種・各フォームで1つ。種とフォームは別ポケモン扱い)。
 フォームのidは種の後ろから連番で振り直すため、世代追加時に変わりうる
 (永続キーには使わないこと)。
@@ -72,6 +74,12 @@ def main() -> int:
     }
     pokemon = {r["id"]: r for r in fetch_csv("pokemon")}
     forms = fetch_csv("pokemon_forms")
+    species_generation = {
+        int(r["id"]): r["generation_id"] for r in fetch_csv("pokemon_species")
+    }
+    vg_generation = {
+        r["id"]: r["generation_id"] for r in fetch_csv("version_groups")
+    }
 
     if not species_names or not form_names or not type_names:
         print("error: Japanese names not found in source", file=sys.stderr)
@@ -101,7 +109,7 @@ def main() -> int:
 
     # 収録対象フォームを種ごとにまとめる(同名フォームは重複排除:
     # パルデアタウロスの3種等は1グループにする)
-    form_groups: dict[int, list[tuple[str, bool, str]]] = {}
+    form_groups: dict[int, list[tuple[str, bool, str, str]]] = {}
     seen: set[tuple[int, str]] = set()
     for f in sorted(forms, key=lambda r: int(r["id"])):
         name = form_names.get(int(f["id"]))
@@ -114,23 +122,25 @@ def main() -> int:
         if (sid, name) in seen:
             continue
         seen.add((sid, name))
-        form_groups.setdefault(sid, []).append((name, is_mega, f["pokemon_id"]))
+        gen = vg_generation[f["introduced_in_version_group_id"]]
+        form_groups.setdefault(sid, []).append((name, is_mega, f["pokemon_id"], gen))
 
     rows: list[list[str]] = []
     next_form_id = len(species_ids)  # フォーム行のidは種の後ろから行ごとに連番
     n_forms = 0
     for sid in species_ids:
         s_name = species_names[sid]
+        s_gen = species_generation[sid]
         t1, t2 = type_cols(default_pokemon[sid])
-        rows.append([str(sid - 1), s_name, s_name, pron(s_name), t1, t2])
-        for form_name, is_mega, pokemon_id in form_groups.get(sid, []):
+        rows.append([str(sid - 1), s_name, s_name, pron(s_name), t1, t2, s_gen])
+        for form_name, is_mega, pokemon_id, f_gen in form_groups.get(sid, []):
             gid = str(next_form_id)
             next_form_id += 1
             n_forms += 1
             t1, t2 = type_cols(pokemon_id)
             if is_mega:
                 # メガリザードンX 等はフォーム名が完結した名前
-                rows.append([gid, form_name, form_name, pron(form_name), t1, t2])
+                rows.append([gid, form_name, form_name, pron(form_name), t1, t2, f_gen])
                 continue
             original = f"{s_name}（{form_name}）"
             prefix = form_name.removesuffix("のすがた")
@@ -139,11 +149,13 @@ def main() -> int:
                 (f"{prefix}{s_name}", pron(f"{prefix}{s_name}")),
                 (original, pron(f"{s_name}{form_name}")),
             ]:
-                rows.append([gid, original, surface, p, t1, t2])
+                rows.append([gid, original, surface, p, t1, t2, f_gen])
 
     buf = io.StringIO()
     writer = csv.writer(buf, lineterminator="\n")
-    writer.writerow(["id", "original", "surface", "pronunciation", "type1", "type2"])
+    writer.writerow(
+        ["id", "original", "surface", "pronunciation", "type1", "type2", "generation"]
+    )
     writer.writerows(rows)
     # 末尾改行なしで書く(soramimic側のパーサが最終空行で落ちるため)
     OUT_PATH.write_text(buf.getvalue().rstrip("\n"), encoding="utf-8")

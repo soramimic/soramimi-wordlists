@@ -25,8 +25,8 @@
 
 | リスト | P106 | 備考 |
 |---|---|---|
-| youtuber.csv | Q17125263(YouTuber) | P106 に Q58471517 を併せ持つ者(VTuber)は除外 |
-| vtuber.csv | Q58471517(バーチャルYouTuber) | |
+| youtuber.csv | Q17125263(YouTuber) | P106 に Q55155641 を併せ持つ者(VTuber)は除外 |
+| vtuber.csv | Q55155641(バーチャルYouTuber) | |
 
 いずれも **ja.wikipedia に記事があること**を足切りとする(scientist の sitelinks>=20 に相当する著名性フィルタ。登録者数での足切りは API 依存が増えるため採らない)。国内・海外は区別しない(ホロライブ EN/ID などの海外勢も ja 記事があれば入る)。
 

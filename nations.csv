@@ -28,7 +28,8 @@ id,original,surface,status,image,image_page,wikidata
 26,フランス,フランス,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_France.svg,https://commons.wikimedia.org/wiki/File:Flag_of_France.svg,Q142
 27,ガボン,ガボン,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Gabon.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Gabon.svg,Q1000
 28,ガンビア,ガンビア,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_The_Gambia.svg,https://commons.wikimedia.org/wiki/File:Flag_of_The_Gambia.svg,Q1005
-29,グルジア,グルジア,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Georgia.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Georgia.svg,Q230
+29,グルジア,グルジア,former,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Georgia.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Georgia.svg,Q230
+29,ジョージア,ジョージア,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Georgia.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Georgia.svg,Q230
 30,ドイツ,ドイツ,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Germany.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Germany.svg,Q183
 31,ガーナ,ガーナ,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Ghana.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Ghana.svg,Q117
 32,ギリシャ,ギリシャ,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Greece.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Greece.svg,Q41
@@ -78,9 +79,11 @@ id,original,surface,status,image,image_page,wikidata
 76,南スーダン,南スーダン,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_South_Sudan.svg,https://commons.wikimedia.org/wiki/File:Flag_of_South_Sudan.svg,Q958
 77,スペイン,スペイン,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Spain.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Spain.svg,Q29
 78,スリランカ,スリランカ,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Sri_Lanka.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Sri_Lanka.svg,Q854
+78,セイロン,セイロン,former,,,
 79,スーダン,スーダン,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Sudan.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Sudan.svg,Q1049
 80,スリナム,スリナム,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Suriname.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Suriname.svg,Q730
-81,スワジランド,スワジランド,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Eswatini.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Eswatini.svg,Q1050
+81,スワジランド,スワジランド,former,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Eswatini.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Eswatini.svg,Q1050
+81,エスワティニ,エスワティニ,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Eswatini.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Eswatini.svg,Q1050
 82,スウェーデン,スウェーデン,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Sweden.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Sweden.svg,Q34
 83,スイス,スイス,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Switzerland.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Switzerland.svg,Q39
 84,シリア,シリア,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Syria_%282025-%29.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Syria_%282025-%29.svg,Q858
@@ -118,6 +121,7 @@ id,original,surface,status,image,image_page,wikidata
 116,チェコ,チェコ,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_the_Czech_Republic.svg,https://commons.wikimedia.org/wiki/File:Flag_of_the_Czech_Republic.svg,Q213
 117,朝鮮民主主義人民共和国,朝鮮民主主義人民共和国,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_North_Korea.svg,https://commons.wikimedia.org/wiki/File:Flag_of_North_Korea.svg,Q423
 118,コンゴ,コンゴ,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_the_Democratic_Republic_of_the_Congo.svg,https://commons.wikimedia.org/wiki/File:Flag_of_the_Democratic_Republic_of_the_Congo.svg,Q974
+118,ザイール,ザイール,former,,,
 119,デンマーク,デンマーク,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Denmark.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Denmark.svg,Q35
 120,ジブチ,ジブチ,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Djibouti.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Djibouti.svg,Q977
 121,ドミニカ,ドミニカ,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Dominica.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Dominica.svg,Q784
@@ -148,6 +152,7 @@ id,original,surface,status,image,image_page,wikidata
 146,モロッコ,モロッコ,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Morocco.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Morocco.svg,Q1028
 147,モザンビーク,モザンビーク,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Mozambique.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Mozambique.svg,Q1029
 148,ミャンマー,ミャンマー,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Myanmar.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Myanmar.svg,Q836
+148,ビルマ,ビルマ,former,,,
 149,ナミビア,ナミビア,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Namibia.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Namibia.svg,Q1030
 150,ナウル,ナウル,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Nauru.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Nauru.svg,Q697
 151,ネパール,ネパール,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Nepal.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Nepal.svg,Q837
@@ -164,7 +169,8 @@ id,original,surface,status,image,image_page,wikidata
 162,パラグアイ,パラグアイ,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Paraguay.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Paraguay.svg,Q733
 163,ペルー,ペルー,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Peru.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Peru.svg,Q419
 164,フィリピン,フィリピン,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_the_Philippines.svg,https://commons.wikimedia.org/wiki/File:Flag_of_the_Philippines.svg,Q928
-165,マケドニア,マケドニア,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_North_Macedonia.svg,https://commons.wikimedia.org/wiki/File:Flag_of_North_Macedonia.svg,Q221
+165,マケドニア,マケドニア,former,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_North_Macedonia.svg,https://commons.wikimedia.org/wiki/File:Flag_of_North_Macedonia.svg,Q221
+165,北マケドニア,北マケドニア,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_North_Macedonia.svg,https://commons.wikimedia.org/wiki/File:Flag_of_North_Macedonia.svg,Q221
 166,東ティモール,東ティモール,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_East_Timor.svg,https://commons.wikimedia.org/wiki/File:Flag_of_East_Timor.svg,Q574
 167,トーゴ,トーゴ,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Togo_%283-2%29.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Togo_%283-2%29.svg,Q945
 168,チュニジア,チュニジア,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Tunisia.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Tunisia.svg,Q948
@@ -192,3 +198,9 @@ id,original,surface,status,image,image_page,wikidata
 190,アメリカ,アメリカ,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_the_United_States_%28DDD-F-416E_specifications%29.svg,https://commons.wikimedia.org/wiki/File:Flag_of_the_United_States_%28DDD-F-416E_specifications%29.svg,Q30
 191,ベネズエラ,ベネズエラ,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Venezuela.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Venezuela.svg,Q717
 192,ジンバブエ,ジンバブエ,current,http://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_Zimbabwe.svg,https://commons.wikimedia.org/wiki/File:Flag_of_Zimbabwe.svg,Q954
+193,ソ連,ソ連,former,,,
+193,ソビエト連邦,ソビエト連邦,former,,,
+194,ユーゴスラビア,ユーゴスラビア,former,,,
+195,チェコスロバキア,チェコスロバキア,former,,,
+196,東ドイツ,東ドイツ,former,,,
+197,西ドイツ,西ドイツ,former,,,
